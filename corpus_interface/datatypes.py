@@ -219,7 +219,13 @@ class MIDIPitch(Pitch):
             value = int_value
         super().__init__(value=value)
 
-    def pitch_class(self, sharp_flat=None):
+    def octave(self):
+        return self._value // 12 - 1
+
+    def pitch_class(self):
+        return self._value % 12
+
+    def name(self, sharp_flat=None):
         if sharp_flat is None:
             sharp_flat = "sharp"
         if sharp_flat == "sharp":
@@ -228,13 +234,30 @@ class MIDIPitch(Pitch):
             base_names = self._base_names_flat
         else:
             raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
-        return base_names[self._value % 12]
-
-    def name(self, sharp_flat=None):
-        return f"{self.pitch_class(sharp_flat=sharp_flat)}{self._value//12-1}"
+        return f"{base_names[self.pitch_class()]}{self.octave()}"
 
 
 MIDIPitchInterval = MIDIPitch.create_vector_class()
+
+
+class MIDIPitchClass(MIDIPitch):
+
+    def __init__(self, value, *args, **kwargs):
+        if isinstance(value, MIDIPitch):
+            super().__init__(value._value % 12, *args, **kwargs)
+        else:
+            super().__init__(value % 12, *args, **kwargs)
+
+    def name(self, sharp_flat=None):
+        if sharp_flat is None:
+            sharp_flat = "sharp"
+        if sharp_flat == "sharp":
+            base_names = self._base_names_sharp
+        elif sharp_flat == "flat":
+            base_names = self._base_names_flat
+        else:
+            raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
+        return f"{base_names[self.pitch_class()]}"
 
 
 class Event:
@@ -250,5 +273,6 @@ class Event:
 
 if __name__ == "__main__":
     for i in range (0, 100):
-        m = MIDIPitch(i)
-        print(f"{m}: {m.name('flat')} {m.pitch_class()}")
+        p = MIDIPitch(i)
+        c = MIDIPitchClass(p)
+        print(f"{p}: {p.name('flat')}\n    {c}: {c.name()}")

@@ -6,6 +6,7 @@ corpora/**
 **/__pycache__/**
 .idea/**
 .ipynb_checkpoints/**
+CorpusInterface.egg-info/**
 
 # mac os related
 .DS_Store

@@ -1,6 +1,6 @@
 import os
 import re
-from corpus_interface import reader
+from CorpusInterface import reader
 
 
 class Document:

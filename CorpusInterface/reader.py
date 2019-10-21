@@ -1,6 +1,6 @@
 import pandas as pd
 import music21
-from corpus_interface.datatypes import Event, MIDIPitch, LinearTime, LinearTimeDuration
+from CorpusInterface.datatypes import Event, MIDIPitch, LinearTime, LinearTimeDuration
 
 
 def read_txt(path, *args, **kwargs):

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from corpus_interface.datatypes import Point, Pitch, Time
+from CorpusInterface.datatypes import Point, Pitch, Time
 import numpy as np
 
 

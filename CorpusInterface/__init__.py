@@ -8,7 +8,7 @@ import random
 import urllib.request
 import tarfile
 
-from corpus_interface.corpus import FileCorpus
+from CorpusInterface.corpus import FileCorpus
 
 
 @contextmanager

@@ -1,0 +1,11 @@
+
+# ignore actual corpus data
+corpora/**
+
+# python related stuff
+**/__pycache__/**
+.idea/**
+.ipynb_checkpoints/**
+
+# mac os related
+.DS_Store

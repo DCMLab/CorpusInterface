@@ -1,6 +1,6 @@
 import os
 import re
-from CorpusInterface import reader
+from CorpusInterface import readers
 
 
 class Document:
@@ -42,24 +42,24 @@ class FileCorpus(Corpus):
     @staticmethod
     def choose_metadata_reader(metadata):
         if metadata.endswith(".txt"):
-            return reader.read_txt
+            return readers.read_txt
         elif metadata.endswith(".csv"):
-            return reader.read_csv
+            return readers.read_csv
         elif metadata.endswith(".tsv"):
-            return reader.read_tsv
+            return readers.read_tsv
         else:
             raise TypeError(f"Unsupported metadata format of file '{metadata}'")
 
     @staticmethod
     def choose_file_reader(file_type):
         if file_type == "txt":
-            return reader.read_txt
+            return readers.read_txt
         elif file_type == "csv":
-            return reader.read_csv
+            return readers.read_csv
         elif file_type == "tsv":
-            return reader.read_tsv
+            return readers.read_tsv
         elif file_type == "midi":
-            return reader.read_midi
+            return readers.read_midi
         else:
             raise TypeError(f"Unsupported file format '{file_type}'")
 

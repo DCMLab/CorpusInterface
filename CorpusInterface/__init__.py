@@ -103,12 +103,3 @@ def load(name, index_path=None, root_dir=None, allow_download=False):
                           file_regex=corpus_info['RegEx'])
     else:
         raise TypeError(f"Unsupported corpus type '{corpus_info['CorpusType']}'")
-
-
-if __name__ == "__main__":
-    corpus = load("Lakh_clean")
-    for idx, doc in enumerate(corpus):
-        if idx > 3:
-            break
-        print(doc.data())
-    print(corpus)

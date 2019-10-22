@@ -17,15 +17,17 @@ def read_tsv(path, *args, **kwargs):
 
 def read_midi(path, *args, **kwargs):
     events = []
-    for note in music21.converter.parse(path).flat.notes:
-        if isinstance(note, (music21.note.Note, music21.chord.Chord)):
-            for pitch in note.pitches:
-                events.append(Event(data=MIDIPitch(value=pitch.ps),
-                                    time=LinearTime(note.offset),
-                                    duration=LinearTimeDuration(note.duration.quarterLength)))
-        else:
-            raise Warning(f"Encountered unknown MIDI stream object {note} (type: {type(note)}) "
-                          f"while reading file '{path}'")
+    piece = music21.converter.parse(path)
+    for part_id, part in enumerate(piece.parts):
+        for note in part.flat.notes:
+            if isinstance(note, (music21.note.Note, music21.chord.Chord)):
+                for pitch in note.pitches:
+                    events.append(Event(data=MIDIPitch(value=pitch.ps, part=part_id),
+                                        time=LinearTime(note.offset),
+                                        duration=LinearTimeDuration(note.duration.quarterLength)))
+            else:
+                raise Warning(f"Encountered unknown MIDI stream object {note} (type: {type(note)}) "
+                              f"while reading file '{path}'")
     return list(sorted(events, key=lambda e: e.time))
 
 

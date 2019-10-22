@@ -8,7 +8,7 @@ class Document:
     def metadata(self):
         raise NotImplementedError
 
-    def data(self):
+    def __iter__(self):
         raise NotImplementedError
 
 
@@ -33,8 +33,8 @@ class FileDocument(Document):
     def metadata(self):
         return self.path
 
-    def data(self):
-        return self.reader(self.path)
+    def __iter__(self):
+        yield from self.reader(self.path)
 
 
 class FileCorpus(Corpus):

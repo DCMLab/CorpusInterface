@@ -202,6 +202,9 @@ class LinearTime(Time):
         else:
             return self._value < other._value
 
+    def __float__(self):
+        return float(self._value)
+
 
 LinearTimeDuration = LinearTime.create_duration_class()
 
@@ -211,13 +214,20 @@ class MIDIPitch(Pitch):
     _base_names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
-    def __init__(self, value, expect_int=True):
+    def __init__(self, value, part=None, expect_int=True):
         if expect_int:
             int_value = int(value)
             if int_value != value:
                 raise ValueError(f"Expected integer pitch value but got {value}")
             value = int_value
         super().__init__(value=value)
+        self.part = part
+
+    def __int__(self):
+        return self._value
+
+    def __repr__(self):
+        return self.name()
 
     def octave(self):
         return self._value // 12 - 1
@@ -269,10 +279,3 @@ class Event:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(time={self.time}, duration={self.duration}, data={self.data})"
-
-
-if __name__ == "__main__":
-    for i in range (0, 100):
-        p = MIDIPitch(i)
-        c = MIDIPitchClass(p)
-        print(f"{p}: {p.name('flat')}\n    {c}: {c.name()}")

@@ -34,6 +34,7 @@ def get_dir(*, name, index_path=None, root_dir=None):
             return Path(*root_dir.parts, info['Name'])
     else:
         # recurse
+        # TODO: root is None??
         return Path(*get_dir(name=info['Parent'], index_path=index_path, root_dir=root_dir).parts,
                     *info['Root'].split("/"))
 
@@ -65,7 +66,7 @@ def download(*, name, index_path=None, root_dir=None):
         info = get_info(name=info['Parent'], index_path=index_path)
     corpus_dir = get_dir(name=info['Name'], index_path=index_path, root_dir=root_dir)
     if os.path.isdir(corpus_dir):
-        raise Warning(f"Corpus directory '{corpus_dir}' exists. Abborting download.")
+        raise Warning(f"Corpus directory '{corpus_dir}' exists. Aborting download.")
     # make temprary directory and clone in there
     tmp_dir = str(random.randint(0, 10000000000))
     os.makedirs(tmp_dir)
@@ -77,7 +78,7 @@ def download(*, name, index_path=None, root_dir=None):
                 raise Warning("More than one subdirectory, something went wrong.")
             # move directory to intended corpus directory
             shutil.move(os.path.join(os.getcwd(), tmp_dir, subdirs[0]), corpus_dir)
-        if info['AccessMethod'] == 'tar.gz':
+        elif info['AccessMethod'] == 'tar.gz':
             local_filename, headers = urllib.request.urlretrieve(info['URL'])
             tar = tarfile.open(local_filename, "r:gz")
             tar.extractall(corpus_dir)

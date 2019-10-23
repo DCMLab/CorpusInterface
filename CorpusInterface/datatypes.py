@@ -247,7 +247,7 @@ class MIDIPitch(Pitch):
         return f"{base_names[self.pitch_class()]}{self.octave()}"
 
 
-MIDIPitchInterval = MIDIPitch.create_vector_class()
+MIDIPitchInterval = MIDIPitch.create_interval_class()
 
 
 class MIDIPitchClass(MIDIPitch):

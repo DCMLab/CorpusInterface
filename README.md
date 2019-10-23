@@ -9,3 +9,6 @@ Clone the git repo and install locally from source with pip
 
 the `-e` installs in _editable_ mode so you can `git pull` without reinstalling the package to get updates.
 
+## Usage
+
+See the [Tutorial](Tutorial.ipynb) for some initial examples.

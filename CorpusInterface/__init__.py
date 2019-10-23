@@ -72,12 +72,14 @@ def download(*, name, index_path=None, root_dir=None):
     os.makedirs(tmp_dir)
     with cwd(tmp_dir):
         if info['AccessMethod'] == 'git':
+	    #TODO: This should be done with a proper git library for better
+	    #      error messages and tracking etc.
             subprocess.run(["git", "clone", info['URL']])
             subdirs = next(os.walk(os.getcwd()))[1]
             if len(subdirs) > 1:
                 raise Warning("More than one subdirectory, something went wrong.")
             # move directory to intended corpus directory
-            shutil.move(os.path.join(os.getcwd(), tmp_dir, subdirs[0]), corpus_dir)
+            shutil.move(os.path.join(os.getcwd(), subdirs[0]), corpus_dir)
         elif info['AccessMethod'] == 'tar.gz':
             local_filename, headers = urllib.request.urlretrieve(info['URL'])
             tar = tarfile.open(local_filename, "r:gz")

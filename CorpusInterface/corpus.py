@@ -23,8 +23,9 @@ class Corpus:
 
 class FileDocument(Document):
 
-    def __init__(self, path, reader):
+    def __init__(self, path, reader,**kwargs):
         self.path = path
+        self.kwargs = kwargs
         self.reader = reader
 
     def __repr__(self):
@@ -34,7 +35,7 @@ class FileDocument(Document):
         return self.path
 
     def __iter__(self):
-        yield from self.reader(self.path)
+        yield from self.reader(self.path,**self.kwargs)
 
 
 class FileCorpus(Corpus):
@@ -51,15 +52,24 @@ class FileCorpus(Corpus):
             raise TypeError(f"Unsupported metadata format of file '{metadata}'")
 
     @staticmethod
-    def choose_file_reader(file_type):
+    def choose_file_reader(file_specification):
+        # The file type is the part before the first slash
+        file_type = file_specification.split("/")[0]
+        # After which optional arguments are given between further slashes,
+        # with equals signs delineating between key and value
+        # TODO allow key-only arguments
+        file_args = dict([x.split("=") for x in file_specification.split("/")[1:]])
+
+
+
         if file_type == "txt":
-            return readers.read_txt
+            return [readers.read_txt, file_args]
         elif file_type == "csv":
-            return readers.read_csv
+            return [readers.read_csv, file_args]
         elif file_type == "tsv":
-            return readers.read_tsv
+            return [readers.read_tsv, file_args]
         elif file_type == "midi":
-            return readers.read_midi
+            return [readers.read_midi, file_args]
         else:
             raise TypeError(f"Unsupported file format '{file_type}'")
 
@@ -77,7 +87,7 @@ class FileCorpus(Corpus):
             self.metadata_reader = lambda *args, **kwargs: None
         self.document_list = []
         self.path = path
-        self.file_reader = FileCorpus.choose_file_reader(file_type) if file_reader is None else file_reader
+        [self.file_reader, self.file_args] = FileCorpus.choose_file_reader(file_type) if file_reader is None else file_reader
         # compile regex if provided
         if file_regex is not None:
             file_regex = re.compile(file_regex)
@@ -86,7 +96,7 @@ class FileCorpus(Corpus):
             for file in files:
                 # only take matching files
                 if file_regex is None or file_regex.match(file):
-                    self.document_list.append(FileDocument(os.path.join(root, file), self.file_reader))
+                    self.document_list.append(FileDocument(os.path.join(root, file), self.file_reader, **self.file_args))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.path})"

@@ -136,7 +136,7 @@ class TestConverters(TestCase):
             @staticmethod
             def convert_to_PitchA(pitch_b):
                 return PitchA(int(pitch_b._value))
-        PitchB.register_converter(PitchA, PitchB.convert_to_PitchA)
+        Pitch.register_converter(PitchB, PitchA, PitchB.convert_to_PitchA)
 
         # instantiate objects and check (in)equality and conversion)
         a = PitchA(5)
@@ -159,9 +159,9 @@ class TestConverters(TestCase):
         for extend_implicit_converters in [False, True]:
             # we avoid an error on the second registration we use give an explicit value to
             # overwrite_explicit_converters (could also be True, just not None)
-            PitchC.register_converter(PitchB, PitchC.convert_to_PitchB,
-                                      extend_implicit_converters=extend_implicit_converters,
-                                      overwrite_explicit_converters=False)
+            Pitch.register_converter(PitchC, PitchB, PitchC.convert_to_PitchB,
+                                     extend_implicit_converters=extend_implicit_converters,
+                                     overwrite_explicit_converters=False)
             self.assertEqual(b, c.convert_to(PitchB))
             if not extend_implicit_converters:
                 # should NOT be created implicitly
@@ -177,7 +177,7 @@ class TestConverters(TestCase):
         # check again that the implicit converter exists
         self.assertEqual(c.convert_to(PitchA), a)
         # register the converter, which should replace the existing implicit converter
-        PitchC.register_converter(PitchA, direct_but_wrong_converter_from_C_to_A)
+        Pitch.register_converter(PitchC, PitchA, direct_but_wrong_converter_from_C_to_A)
 
         # check
         self.assertEqual(type(a), type(c.convert_to(PitchA)))
@@ -185,6 +185,8 @@ class TestConverters(TestCase):
         self.assertEqual(PitchA(55), c.convert_to(PitchA))
 
         # trying to re-register should raise a ValueError because a direct converter now exists
-        self.assertRaises(ValueError, lambda: PitchC.register_converter(PitchA, direct_but_wrong_converter_from_C_to_A))
+        self.assertRaises(ValueError,
+                          lambda: Pitch.register_converter(PitchC, PitchA, direct_but_wrong_converter_from_C_to_A))
         # but overwriting can be forced
-        PitchC.register_converter(PitchA, direct_but_wrong_converter_from_C_to_A, overwrite_explicit_converters=True)
+        Pitch.register_converter(PitchC, PitchA, direct_but_wrong_converter_from_C_to_A,
+                                 overwrite_explicit_converters=True)

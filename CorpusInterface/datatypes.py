@@ -151,33 +151,33 @@ class Pitch(Point):
     # successively, converts A to B
     __converters__ = {}
 
-    @classmethod
-    def register_converter(cls, other_type, conv_func,
+    @staticmethod
+    def register_converter(from_type, to_type, conv_func,
                            overwrite_explicit_converters=None,
                            overwrite_implicit_converter=True,
                            extend_implicit_converters=True):
         """
-        Register a converter from cls to other type. The converter function should be function taking as its single
-        argument an cls object and returning an other_type object.
-        :param other_type: other type derived from Pitch, which the decorated function convertes to
-        :param conv_func: converter function from cls to other_type
+        Register a converter from from_type to other type. The converter function should be function taking as its
+        single argument an from_type object and returning an other_type object.
+        :param to_type: other type derived from Pitch, which the decorated function convertes to
+        :param conv_func: converter function from from_type to other_type
         :param overwrite_explicit_converters: can be True, False, or None (default); if True and there exists an
         explicit converter (i.e. the list of converter functions is of length 1), replace it by this converter function;
         if False, don't replace explicit converters; if None, raise a ValueError if an explicit converter exists
-        :param overwrite_implicit_converter: if there exists an implicit converter (i.e. the list of converter
-        functions is of length greater than 1) replace it by this converter function
-        :param extend_implicit_converters: if there is an (explicit or implicit) converter from type X to type cls, add
-        an implicit converter from type X to other_type by extending the list of converter functions from X to cls by
-        this converter function; if there already exists an (explicit or implicit) converter from X to other_type, it
-        will not be overwritten
+        :param overwrite_implicit_converter: if there exists an implicit converter (i.e. the list of converter functions
+        is of length greater than 1) replace it by this converter function
+        :param extend_implicit_converters: if there is an (explicit or implicit) converter from type X to type
+        from_type, add an implicit converter from type X to other_type by extending the list of converter functions from
+        X to from_type by this converter function; if there already exists an (explicit or implicit) converter from X to
+        other_type, it will not be overwritten
         """
         # initialise converter dict if it does not exist
-        if cls not in Pitch.__converters__:
-            Pitch.__converters__[cls] = {}
-        # get existing converters from cls to other_type and decide whether to set new converter
+        if from_type not in Pitch.__converters__:
+            Pitch.__converters__[from_type] = {}
+        # get existing converters from from_type to to_type and decide whether to set new converter
         set_new_converter = False
         try:
-            converter = cls.get_converter(other_type)
+            converter = from_type.get_converter(to_type)
         except:
             # no existing converters
             set_new_converter = True
@@ -196,27 +196,27 @@ class Pitch(Point):
                     set_new_converter = True
         # set the new converter
         if set_new_converter:
-            Pitch.__converters__[cls][other_type] = [conv_func]
+            Pitch.__converters__[from_type][to_type] = [conv_func]
         # extend implicit converters
         if extend_implicit_converters:
             for another_from_type, other_converters in Pitch.__converters__.items():
                 for another_to_type, converter_pipeline in other_converters.items():
-                    # trying to prepend this converter [cls --> other type == another_from_type --> another_to_type]
-                    if other_type == another_from_type:
+                    # trying to prepend this converter [from_type --> other type == another_from_type --> another_to_type]
+                    if to_type == another_from_type:
                         # initialise if necessary
-                        if cls not in Pitch.__converters__:
-                            Pitch.__converters__[cls] = {}
-                        # get existing converters cls --> ???
-                        converters = cls.get_converter()
+                        if from_type not in Pitch.__converters__:
+                            Pitch.__converters__[from_type] = {}
+                        # get existing converters from_type --> ???
+                        converters = from_type.get_converter()
                         # add the extended converter if one does not exist
                         if another_to_type not in converters:
                             converters[another_to_type] = [conv_func] + converter_pipeline
-                    # try to append this converter [another_from_type --> another_to_type == cls --> other_type]
-                    if another_to_type == cls:
+                    # try to append this converter [another_from_type --> another_to_type == from_type --> to_type]
+                    if another_to_type == from_type:
                         # already initialised and we have the existing converters another_from_type --> ???
                         # add the extended converter if one does not exist
-                        if other_type not in other_converters:
-                            other_converters[other_type] = converter_pipeline + [conv_func]
+                        if to_type not in other_converters:
+                            other_converters[to_type] = converter_pipeline + [conv_func]
 
     @classmethod
     def get_converter(cls, other_type=None):

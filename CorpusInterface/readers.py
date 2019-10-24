@@ -24,13 +24,14 @@ def read_tsv(path, *args, **kwargs):
       if key == "duration":
         duration_col = kwargs[key]
     for row in stdata.iterrows():
-      time = row[0]
+      [index, data] = row
+      time = index
       if time_col != None:
-        time = row[1][time_col]
+        time = data[time_col]
       duration = None
       if duration_col != None:
-        duration = row[1][duration_col]
-      events.append(Event(data=row[1],time=time,duration=duration))
+        duration = data[duration_col]
+      events.append(Event(data=data,time=LinearTime(time),duration=LinearTimeDuration(duration)))
     
     return list(events)
 

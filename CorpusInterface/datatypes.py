@@ -26,8 +26,8 @@ class Point:
             if not isinstance(other, cls):
                 raise TypeError(f"Object is not of correct type (expected {cls}, got {type(other)}")
 
-        def __init__(self, value):
-            super().__init__()
+        def __init__(self, value, *args, **kwargs):
+            super().__init__(*args, **kwargs)
             self._value = value
 
         def __repr__(self):
@@ -104,8 +104,8 @@ class Point:
         if not isinstance(other, cls._vector_class):
             raise TypeError(f"Object is not of correct type (expected {cls._vector_class}, got {type(other)}")
 
-    def __init__(self, value):
-        super().__init__()
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._value = value
 
     def __repr__(self):
@@ -214,13 +214,13 @@ class MIDIPitch(Pitch):
     _base_names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 
-    def __init__(self, value, part=None, expect_int=True):
+    def __init__(self, value, part=None, expect_int=True, *args, **kwargs):
         if expect_int:
             int_value = int(value)
             if int_value != value:
                 raise ValueError(f"Expected integer pitch value but got {value}")
             value = int_value
-        super().__init__(value=value)
+        super().__init__(value=value, *args, **kwargs)
         self.part = part
 
     def __int__(self):

@@ -2,6 +2,7 @@ import pandas as pd
 import music21
 from CorpusInterface.datatypes import Event, MIDIPitch, LinearTime, LinearTimeDuration
 
+# Readers for corpus files - each file 
 
 def read_txt(path, *args, **kwargs):
     return open(path, *args, **kwargs).read()
@@ -12,7 +13,26 @@ def read_csv(path, *args, **kwargs):
 
 
 def read_tsv(path, *args, **kwargs):
-    return pd.read_csv(path, sep='\t', *args, **kwargs)
+    time_col = None 
+    duration_col = None
+    events = []
+
+    stdata = pd.read_csv(path, sep='\t')
+    for key in kwargs:
+      if key == "time":
+        time_col = kwargs[key]
+      if key == "duration":
+        duration_col = kwargs[key]
+    for row in stdata.iterrows():
+      time = row[0]
+      if time_col != None:
+        time = row[1][time_col]
+      duration = None
+      if duration_col != None:
+        duration = row[1][duration_col]
+      events.append(Event(data=row[1],time=time,duration=duration))
+    
+    return list(events)
 
 
 def read_midi(path, *args, **kwargs):

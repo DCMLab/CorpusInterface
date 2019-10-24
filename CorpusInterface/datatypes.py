@@ -243,6 +243,8 @@ class MIDIPitch(Pitch):
             value = int_value
         super().__init__(value=value, *args, **kwargs)
         self.part = part
+        # compute frequency
+        self.freq = 2 ** ((self._value - 69) / 12) * 440
 
     def __int__(self):
         return self._value

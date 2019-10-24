@@ -118,3 +118,7 @@ class TestMIDIPitch(TestCase):
             self.assertEqual(MIDIPitch(p), MIDIPitch(72))
         for p in ["C5-", "B#b", "c5"]:
             self.assertRaises(ValueError, lambda: MIDIPitch(p))
+
+    def test_freq(self):
+        self.assertEqual(MIDIPitch("A4").freq, 440)
+        self.assertEqual(MIDIPitch("A5").freq, 880)

@@ -1,4 +1,4 @@
-
+import re
 
 class Point:
     """
@@ -215,10 +215,27 @@ LinearTimeDuration = LinearTime.create_duration_class()
 
 class MIDIPitch(Pitch):
 
+    _diatonic_pitch_class = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 6, "A": 9, "B": 11}
     _base_names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
+    name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>-?[0-9]+)$")
 
     def __init__(self, value, part=None, expect_int=True, *args, **kwargs):
+        if isinstance(value, str):
+            # extract pitch class, modifiers, and octave
+            match = MIDIPitch.name_regex.match(value)
+            if match is None:
+                raise ValueError(f"{value} does not match the regular expression for MIDI pitch names "
+                                 f"'{MIDIPitch.name_regex.pattern}'.")
+            # initialise value with diatonic pitch class
+            value = MIDIPitch._diatonic_pitch_class[match['class']]
+            # add modifiers
+            if "#" in match['modifiers']:
+                value += len(match['modifiers'])
+            else:
+                value -= len(match['modifiers'])
+            # add octave
+            value += 12 * (int(match['octave']) + 1)
         if expect_int:
             int_value = int(value)
             if int_value != value:

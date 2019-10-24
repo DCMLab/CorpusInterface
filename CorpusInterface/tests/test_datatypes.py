@@ -1,5 +1,5 @@
 from unittest import TestCase
-from CorpusInterface.datatypes import Point, Pitch, Time
+from CorpusInterface.datatypes import Point, Pitch, Time, MIDIPitch
 import numpy as np
 
 
@@ -109,3 +109,12 @@ class TestPoint(TestCase):
                     self.assertRaises(AttributeError, lambda: p1 + p2)
                     self.assertRaises(AttributeError, lambda: p1 - p2)
                     self.assertRaises(AttributeError, lambda: p1.to_vector())
+
+
+class TestMIDIPitch(TestCase):
+
+    def test_init(self):
+        for p in ["C5", "B#4", "A###4", "Dbb5"]:
+            self.assertEqual(MIDIPitch(p), MIDIPitch(72))
+        for p in ["C5-", "B#b", "c5"]:
+            self.assertRaises(ValueError, lambda: MIDIPitch(p))

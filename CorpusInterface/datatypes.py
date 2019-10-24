@@ -268,7 +268,7 @@ class Pitch(Point):
         # call parent function to create
         interval_class = cls.create_vector_class(name=name,
                                                  force_overwrite=force_overwrite,
-                                                 vector_class=Pitch.Vector)
+                                                 vector_class=Pitch.Interval)
         # add properly renamed versions
         interval_class.to_pitch = interval_class.to_point
         cls._interval_class = cls._vector_class

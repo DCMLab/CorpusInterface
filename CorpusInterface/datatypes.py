@@ -261,26 +261,26 @@ class Pitch(Point):
                 raise NotImplementedError(f"There are no converters registered for type '{cls}'")
 
     @classmethod
-    def create_interval_class(cls, name=None, *, force_overwrite=False):
+    def create_interval_class(pitch_class, name=None, *, force_overwrite=False):
         # give it a proper default name
         if name is None:
-            name = cls.__name__+"Interval"
+            name = pitch_class.__name__ + "Interval"
         # call parent function to create
-        interval_class = cls.create_vector_class(name=name,
-                                                 force_overwrite=force_overwrite,
-                                                 vector_class=Pitch.Interval)
+        interval_class = pitch_class.create_vector_class(name=name,
+                                                         force_overwrite=force_overwrite,
+                                                         vector_class=Pitch.Interval)
         # add properly renamed versions
         interval_class.to_pitch = interval_class.to_point
-        cls._interval_class = cls._vector_class
+        pitch_class._interval_class = pitch_class._vector_class
         interval_class._pitch_class = interval_class._point_class
         # return
         return interval_class
 
     @classmethod
-    def link_interval_class(cls, icls, *, force_overwrite=False):
-        cls.link_vector_class(icls, force_overwrite=force_overwrite)
-        cls._interval_class = cls._vector_class
-        icls._pitch_class = icls._point_class
+    def link_interval_class(pitch_class, interval_class, *, force_overwrite=False):
+        pitch_class.link_vector_class(interval_class, force_overwrite=force_overwrite)
+        pitch_class._interval_class = pitch_class._vector_class
+        interval_class._pitch_class = interval_class._point_class
 
     def convert_to(self, other_type):
         ret = self

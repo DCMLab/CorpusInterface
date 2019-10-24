@@ -122,3 +122,69 @@ class TestMIDIPitch(TestCase):
     def test_freq(self):
         self.assertEqual(MIDIPitch("A4").freq, 440)
         self.assertEqual(MIDIPitch("A5").freq, 880)
+
+
+class TestConverters(TestCase):
+
+    def test_converters(self):
+        # define classes A and B with a converter A-->B
+
+        class PitchA(Pitch):
+            pass
+
+        class PitchB(Pitch):
+            @staticmethod
+            def convert_to_PitchA(pitch_b):
+                return PitchA(int(pitch_b._value))
+        PitchB.register_converter(PitchA, PitchB.convert_to_PitchA)
+
+        # instantiate objects and check (in)equality and conversion)
+        a = PitchA(5)
+        b = PitchB("5")
+        self.assertNotEqual(a, b)
+        self.assertEqual(a, b.convert_to(PitchA))
+
+        # define another class C with converter C-->A
+        class PitchC(Pitch):
+            @staticmethod
+            def convert_to_PitchB(pitch_c):
+                return PitchB(str(len(pitch_c._value)))
+
+        # instantiate object and check (in)equality
+        c = PitchC([0, 0, 0, 0, 0])
+        self.assertNotEqual(b, c)
+        self.assertNotEqual(c, a)
+
+        # register without and with extending implicit converters and check conversion
+        for extend_implicit_converters in [False, True]:
+            # we avoid an error on the second registration we use give an explicit value to
+            # overwrite_explicit_converters (could also be True, just not None)
+            PitchC.register_converter(PitchB, PitchC.convert_to_PitchB,
+                                      extend_implicit_converters=extend_implicit_converters,
+                                      overwrite_explicit_converters=False)
+            self.assertEqual(b, c.convert_to(PitchB))
+            if not extend_implicit_converters:
+                # should NOT be created implicitly
+                self.assertRaises(NotImplementedError, lambda: c.convert_to(PitchA))
+            else:
+                # SHOULD be created implicitly
+                self.assertEqual(c.convert_to(PitchA), a)
+
+        # define a direct converter C-->A which returns a fixed/wrong object
+        # (to detect whether the old or now converter was used)
+        def direct_but_wrong_converter_from_C_to_A(c):
+            return PitchA(55)
+        # check again that the implicit converter exists
+        self.assertEqual(c.convert_to(PitchA), a)
+        # register the converter, which should replace the existing implicit converter
+        PitchC.register_converter(PitchA, direct_but_wrong_converter_from_C_to_A)
+
+        # check
+        self.assertEqual(type(a), type(c.convert_to(PitchA)))
+        self.assertNotEqual(a, c.convert_to(PitchA))
+        self.assertEqual(PitchA(55), c.convert_to(PitchA))
+
+        # trying to re-register should raise a ValueError because a direct converter now exists
+        self.assertRaises(ValueError, lambda: PitchC.register_converter(PitchA, direct_but_wrong_converter_from_C_to_A))
+        # but overwriting can be forced
+        PitchC.register_converter(PitchA, direct_but_wrong_converter_from_C_to_A, overwrite_explicit_converters=True)

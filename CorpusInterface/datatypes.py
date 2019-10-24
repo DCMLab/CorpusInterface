@@ -140,7 +140,11 @@ class Pitch(Point):
         to_vector --> to_interval
         create_vector_class --> create_interval_class
         link_vector_class --> link_interval_class
+        Point.Vector --> Pitch.Interval
     """
+
+    # for pitches, intervals are the equivalent of vectors
+    Interval = Point.Vector
 
     @classmethod
     def create_interval_class(cls, name=None, *, force_overwrite=False):

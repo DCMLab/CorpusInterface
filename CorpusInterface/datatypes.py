@@ -1,5 +1,6 @@
 import re
 
+
 class Point:
     """
     Base class for objects describing a point in a space. Examples would be a pitch, a point in time, or a point in
@@ -55,15 +56,23 @@ class Point:
             return self._point_class(self._value)
 
     @classmethod
-    def create_vector_class(cls, name=None, *, force_overwrite=False):
+    def create_vector_class(cls, name=None, *, force_overwrite=False, vector_class=None):
         """
         Create the corresponding vector class for this point class and link the two classes
         :param name: optional name for the vector class (default is to append "Vector" to the point class name)
+        :param force_overwrite: whether to overwrite an existing vector class
+        :param vector_class: an optional class, derived from Vector, that is used as base class
         :return: the vector class object
         """
+        # if class was provided check that it is actually derived from Vector
+        if vector_class is not None:
+            if Point.Vector not in vector_class.__bases__:
+                raise TypeError(f"Provided class {vector_class} does not derive from {Point.Vector}")
+        else:
+            vector_class = Point.Vector
         # create vector class derived from abstract vector class
         vector_class = type(cls.__name__ + "Vector" if name is None else name,
-                            (Point.Vector,),
+                            (vector_class,),
                             {})
         # link classes
         cls.link_vector_class(vector_class, force_overwrite=force_overwrite)
@@ -135,7 +144,7 @@ class Point:
 
 class Pitch(Point):
     """
-    Base class for pitches. Behaves like Point/Vector but adds renamed versions for:
+    Base class for pitches. Pitch and Interval behave like Point and vector so we add renamed versions for:
         to_point --> to_pitch
         to_vector --> to_interval
         create_vector_class --> create_interval_class
@@ -143,8 +152,25 @@ class Pitch(Point):
         Point.Vector --> Pitch.Interval
     """
 
-    # for pitches, intervals are the equivalent of vectors
-    Interval = Point.Vector
+    class Interval(Point.Vector):
+
+        @classmethod
+        def _assert_has_pitch_class(cls):
+            cls._assert_has_point_class()
+
+        @classmethod
+        def _assert_is_interval(cls, other):
+            cls._assert_is_vector(other)
+
+        def to_pitch(self):
+            self._assert_has_pitch_class()
+            return self._pitch_class(self._value)
+
+        def convert_to(self, other_type):
+            """Attempts to convert intervals using the converters from the corresponding Pitch classes."""
+            self._assert_has_pitch_class()
+            other_type._assert_has_pitch_class()
+            return self.to_pitch().convert_to(other_type._pitch_class).to_interval()
 
     # store converters for classes derived from Pitch;
     # it's a dict of dicts, so that __converters__[A][B] returns is a list of functions that, when executed
@@ -234,22 +260,27 @@ class Pitch(Point):
             except KeyError:
                 raise NotImplementedError(f"There are no converters registered for type '{cls}'")
 
-
     @classmethod
     def create_interval_class(cls, name=None, *, force_overwrite=False):
         # give it a proper default name
         if name is None:
             name = cls.__name__+"Interval"
         # call parent function to create
-        interval_class = cls.create_vector_class(name=name, force_overwrite=force_overwrite)
-        # add properly renamed version of to_point
+        interval_class = cls.create_vector_class(name=name,
+                                                 force_overwrite=force_overwrite,
+                                                 vector_class=Pitch.Vector)
+        # add properly renamed versions
         interval_class.to_pitch = interval_class.to_point
+        cls._interval_class = cls._vector_class
+        interval_class._pitch_class = interval_class._point_class
         # return
         return interval_class
 
     @classmethod
     def link_interval_class(cls, icls, *, force_overwrite=False):
         cls.link_vector_class(icls, force_overwrite=force_overwrite)
+        cls._interval_class = cls._vector_class
+        icls._pitch_class = icls._point_class
 
     def convert_to(self, other_type):
         ret = self

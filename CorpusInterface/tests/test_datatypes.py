@@ -128,32 +128,41 @@ class TestConverters(TestCase):
 
     def test_converters(self):
         # define classes A and B with a converter A-->B
-
         class PitchA(Pitch):
             pass
+        PitchAInterval = PitchA.create_interval_class()
 
         class PitchB(Pitch):
             @staticmethod
             def convert_to_PitchA(pitch_b):
                 return PitchA(int(pitch_b._value))
         Pitch.register_converter(PitchB, PitchA, PitchB.convert_to_PitchA)
+        PitchBInterval = PitchB.create_interval_class()
 
         # instantiate objects and check (in)equality and conversion)
         a = PitchA(5)
+        ai = a.to_interval()
         b = PitchB("5")
+        bi = b.to_interval()
         self.assertNotEqual(a, b)
+        self.assertNotEqual(ai, bi)
         self.assertEqual(a, b.convert_to(PitchA))
+        self.assertEqual(ai, bi.convert_to(PitchAInterval))
 
         # define another class C with converter C-->A
         class PitchC(Pitch):
             @staticmethod
             def convert_to_PitchB(pitch_c):
                 return PitchB(str(len(pitch_c._value)))
+        PitchCInterval = PitchC.create_interval_class()
 
         # instantiate object and check (in)equality
         c = PitchC([0, 0, 0, 0, 0])
+        ci = c.to_interval()
         self.assertNotEqual(b, c)
+        self.assertNotEqual(bi, ci)
         self.assertNotEqual(c, a)
+        self.assertNotEqual(ci, ai)
 
         # register without and with extending implicit converters and check conversion
         for extend_implicit_converters in [False, True]:
@@ -163,12 +172,15 @@ class TestConverters(TestCase):
                                      extend_implicit_converters=extend_implicit_converters,
                                      overwrite_explicit_converters=False)
             self.assertEqual(b, c.convert_to(PitchB))
+            self.assertEqual(bi, ci.convert_to(PitchBInterval))
             if not extend_implicit_converters:
                 # should NOT be created implicitly
                 self.assertRaises(NotImplementedError, lambda: c.convert_to(PitchA))
+                self.assertRaises(NotImplementedError, lambda: ci.convert_to(PitchAInterval))
             else:
                 # SHOULD be created implicitly
                 self.assertEqual(c.convert_to(PitchA), a)
+                self.assertEqual(ci.convert_to(PitchAInterval), ai)
 
         # define a direct converter C-->A which returns a fixed/wrong object
         # (to detect whether the old or now converter was used)
@@ -176,13 +188,17 @@ class TestConverters(TestCase):
             return PitchA(55)
         # check again that the implicit converter exists
         self.assertEqual(c.convert_to(PitchA), a)
+        self.assertEqual(ci.convert_to(PitchAInterval), ai)
         # register the converter, which should replace the existing implicit converter
         Pitch.register_converter(PitchC, PitchA, direct_but_wrong_converter_from_C_to_A)
 
         # check
         self.assertEqual(type(a), type(c.convert_to(PitchA)))
+        self.assertEqual(type(ai), type(ci.convert_to(PitchAInterval)))
         self.assertNotEqual(a, c.convert_to(PitchA))
+        self.assertNotEqual(ai, ci.convert_to(PitchAInterval))
         self.assertEqual(PitchA(55), c.convert_to(PitchA))
+        self.assertEqual(PitchAInterval(55), ci.convert_to(PitchAInterval))
 
         # trying to re-register should raise a ValueError because a direct converter now exists
         self.assertRaises(ValueError,

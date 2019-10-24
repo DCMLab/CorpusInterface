@@ -170,7 +170,17 @@ class Pitch(Point):
             """Attempts to convert intervals using the converters from the corresponding Pitch classes."""
             self._assert_has_pitch_class()
             other_type._assert_has_pitch_class()
-            return self.to_pitch().convert_to(other_type._pitch_class).to_interval()
+            # convert interval-->equivalent pitch-->other pitch type-->equivalent interval
+            other_interval = self.to_pitch().convert_to(other_type._pitch_class).to_interval()
+            # but point<-->value (pitch<-->interval) conversion relies on an implicit origin;
+            # if the two origins of the two different pitch classes are not identical,
+            # we are off by the corresponding difference;
+            # the origin can be retrieved as the equivalent point of the zero vector
+            origin_from = (self - self).to_pitch().convert_to(other_type._pitch_class) # point
+            origin_to = (other_interval - other_interval).to_pitch() # point
+            origin_difference = origin_to - origin_from # vector
+            # now we add that difference (we move from the "from" origin to the "to" origin)
+            return other_interval + origin_difference
 
     # store converters for classes derived from Pitch;
     # it's a dict of dicts, so that __converters__[A][B] returns is a list of functions that, when executed

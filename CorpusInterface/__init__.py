@@ -93,7 +93,14 @@ def download(*, name, index_path=None, root_dir=None):
 
 
 def load(name, index_path=None, root_dir=None, allow_download=False):
-    corpus_dir = get_dir(name=name, index_path=index_path, root_dir=root_dir)
+    # We want the info from the child, but need to recurse through the
+    # parents until we find the right directory
+    temp_info = get_info(name=name, index_path=index_path)
+    print(f"attempting to load corpus '{name}'")
+    while temp_info['Parent'] is not None:
+        print(f"delegating to parent corpus {temp_info['Parent']}")
+        temp_info = get_info(name=temp_info['Parent'], index_path=index_path)
+    corpus_dir = get_dir(name=temp_info['Name'], index_path=index_path, root_dir=root_dir)
     corpus_info = get_info(name=name, index_path=index_path)
     if not os.path.isdir(corpus_dir) and allow_download:
         download(name=name, index_path=index_path, root_dir=root_dir)

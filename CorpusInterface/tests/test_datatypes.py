@@ -1,5 +1,6 @@
 from unittest import TestCase
-from CorpusInterface.datatypes import Point, Pitch, Time, MIDIPitch
+from CorpusInterface.datatypes import Point, Pitch, Time
+from CorpusInterface.datatypes import MIDIPitch, MIDIPitchInterval, MIDIPitchClass, MIDIPitchClassInterval
 import numpy as np
 
 
@@ -118,10 +119,33 @@ class TestMIDIPitch(TestCase):
             self.assertEqual(MIDIPitch(p), MIDIPitch(72))
         for p in ["C5-", "B#b", "c5"]:
             self.assertRaises(ValueError, lambda: MIDIPitch(p))
+        for midi_name_sharp, midi_name_flat, midi_number in zip(
+                ["C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4",
+                 "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5",],
+                ["C4", "Db4", "D4", "Eb4", "E4", "F4", "Gb4", "G4", "Ab4", "A4", "Bb4", "B4",
+                 "C5", "Db5", "D5", "Eb5", "E5", "F5", "Gb5", "G5", "Ab5", "A5", "Bb5", "B5",],
+                range(60, 85)
+        ):
+            from_flat = MIDIPitch(midi_name_flat)
+            from_sharp = MIDIPitch(midi_name_sharp)
+            from_number = MIDIPitch(midi_number)
+            self.assertEqual(from_flat, from_number)
+            self.assertEqual(from_sharp, from_number)
+            self.assertEqual(midi_number, int(from_number))
+            self.assertEqual(MIDIPitchClass(from_flat), MIDIPitchClass(midi_number % 12))
+            self.assertEqual(MIDIPitchClass(from_sharp), MIDIPitchClass(midi_number % 12))
 
     def test_freq(self):
         self.assertEqual(MIDIPitch("A4").freq, 440)
         self.assertEqual(MIDIPitch("A5").freq, 880)
+
+    def test_arithmetics(self):
+        c4 = MIDIPitch("C4")
+        g4 = MIDIPitch("G4")
+        i = MIDIPitchInterval(-7)
+        self.assertEqual(c4 - g4, i)
+        self.assertEqual(i.convert_to(MIDIPitchClassInterval), MIDIPitchClassInterval(5))
+        self.assertEqual(i.convert_to(MIDIPitchClassInterval), MIDIPitchClassInterval(i))
 
 
 class TestConverters(TestCase):

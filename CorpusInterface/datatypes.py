@@ -230,7 +230,7 @@ class Pitch(Point):
         """
         Register a converter from from_type to other type. The converter function should be function taking as its
         single argument an from_type object and returning an other_type object.
-        :param to_type: other type derived from Pitch, which the decorated function convertes to
+        :param to_type: other type derived from Pitch, which the converter function converts to
         :param conv_func: converter function from from_type to other_type
         :param overwrite_explicit_converters: can be True, False, or None (default); if True and there exists an
         explicit converter (i.e. the list of converter functions is of length 1), replace it by this converter function;
@@ -249,7 +249,7 @@ class Pitch(Point):
         set_new_converter = False
         try:
             converter = from_type.get_converter(to_type)
-        except:
+        except NotImplementedError:
             # no existing converters
             set_new_converter = True
         else:

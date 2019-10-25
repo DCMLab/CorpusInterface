@@ -7,6 +7,7 @@ import pandas as pd
 import random
 import urllib.request
 import tarfile
+import logging
 
 from CorpusInterface.corpus import FileCorpus
 
@@ -60,9 +61,9 @@ def get_info(*, name, index_path=None):
 
 def download(*, name, index_path=None, root_dir=None):
     info = get_info(name=name, index_path=index_path)
-    print(f"attempting to download corpus '{name}'")
+    print(f"Attempting to download corpus '{name}'")
     while info['Parent'] is not None:
-        print(f"delegating to parent corpus {info['Parent']}")
+        logging.info(f"Delegating dowload to parent corpus {info['Parent']}")
         info = get_info(name=info['Parent'], index_path=index_path)
     corpus_dir = get_dir(name=info['Name'], index_path=index_path, root_dir=root_dir)
     if os.path.isdir(corpus_dir):
@@ -96,9 +97,9 @@ def load(name, index_path=None, root_dir=None, allow_download=False):
     # We want the info from the child, but need to recurse through the
     # parents until we find the right directory
     temp_info = get_info(name=name, index_path=index_path)
-    print(f"attempting to load corpus '{name}'")
+    logging.info(f"Attempting to load corpus '{name}'")
     while temp_info['Parent'] is not None:
-        print(f"delegating to parent corpus {temp_info['Parent']}")
+        logging.info(f"Looking at parent corpus {temp_info['Parent']} to find root directory")
         temp_info = get_info(name=temp_info['Parent'], index_path=index_path)
     corpus_dir = get_dir(name=temp_info['Name'], index_path=index_path, root_dir=root_dir)
     corpus_info = get_info(name=name, index_path=index_path)

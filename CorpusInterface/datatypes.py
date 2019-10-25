@@ -379,7 +379,7 @@ LinearTimeDuration = LinearTime.create_duration_class()
 
 class MIDIPitch(Pitch):
 
-    _diatonic_pitch_class = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 6, "A": 9, "B": 11}
+    _diatonic_pitch_class = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
     _base_names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
     name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>-?[0-9]+)$")

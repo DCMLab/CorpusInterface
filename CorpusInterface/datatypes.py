@@ -190,6 +190,12 @@ class Pitch(Point):
         def _assert_is_interval(cls, other):
             cls._assert_is_vector(other)
 
+        def __init__(self, value, *args, **kwargs):
+            # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
+            if Pitch.Interval in value.__class__.__bases__:
+                value = value.convert_to(self.__class__)._value
+            super().__init__(value, *args, **kwargs)
+
         def to_pitch(self):
             self._assert_has_pitch_class()
             return self._pitch_class(self._value)
@@ -319,6 +325,12 @@ class Pitch(Point):
         pitch_class.link_vector_class(interval_class, force_overwrite=force_overwrite)
         pitch_class._interval_class = pitch_class._vector_class
         interval_class._pitch_class = interval_class._point_class
+
+    def __init__(self, value, *args, **kwargs):
+        # if value is derived from Pitch, try to convert to converter to this type and get the _value
+        if Pitch in value.__class__.__bases__:
+            value = value.convert_to(self.__class__)._value
+        super().__init__(value, *args, **kwargs)
 
     def convert_to(self, other_type):
         ret = self

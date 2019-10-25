@@ -271,12 +271,11 @@ class Pitch(Point):
         # extend implicit converters
         if extend_implicit_converters:
             for another_from_type, other_converters in Pitch.__converters__.items():
+                # remember new converters to not change dict while iterating over it
+                new_converters = []
                 for another_to_type, converter_pipeline in other_converters.items():
-                    # trying to prepend this converter [from_type --> other type == another_from_type --> another_to_type]
+                    # trying to prepend this converter [from_type --> to_type == another_from_type --> another_to_type]
                     if to_type == another_from_type:
-                        # initialise if necessary
-                        if from_type not in Pitch.__converters__:
-                            Pitch.__converters__[from_type] = {}
                         # get existing converters from_type --> ???
                         converters = from_type.get_converter()
                         # add the extended converter if one does not exist
@@ -287,7 +286,10 @@ class Pitch(Point):
                         # already initialised and we have the existing converters another_from_type --> ???
                         # add the extended converter if one does not exist
                         if to_type not in other_converters:
-                            other_converters[to_type] = converter_pipeline + [conv_func]
+                            new_converters.append((to_type, converter_pipeline + [conv_func]))
+                # insert new converters
+                for key, val in new_converters:
+                    other_converters[key] = val
 
     @classmethod
     def get_converter(cls, other_type=None):

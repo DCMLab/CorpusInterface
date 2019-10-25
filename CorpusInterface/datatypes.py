@@ -27,6 +27,18 @@ class Point:
             if not isinstance(other, cls):
                 raise TypeError(f"Object is not of correct type (expected {cls}, got {type(other)}")
 
+        @staticmethod
+        def _vector_add(vec1, vec2):
+            return vec1 + vec2
+
+        @staticmethod
+        def _vector_sub(vec1, vec2):
+            return vec1 - vec2
+
+        @staticmethod
+        def _scalar_mul(scalar, vec):
+            return scalar * vec
+
         def __init__(self, value, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self._value = value
@@ -36,14 +48,14 @@ class Point:
 
         def __sub__(self, other):
             self._assert_is_vector(other)
-            return self.__class__(self._value - other._value)
+            return self.__class__(self._vector_sub(self._value, other._value))
 
         def __add__(self, other):
             self._assert_is_vector(other)
-            return self.__class__(self._value + other._value)
+            return self.__class__(self._vector_add(self._value, other._value))
 
         def __mul__(self, other):
-            return self.__class__(self._value * other)
+            return self.__class__(self._scalar_mul(other, self._value))
 
         def __rmul__(self, other):
             return self.__mul__(other)
@@ -113,6 +125,22 @@ class Point:
         if not isinstance(other, cls._vector_class):
             raise TypeError(f"Object is not of correct type (expected {cls._vector_class}, got {type(other)}")
 
+    @staticmethod
+    def _vector_add(point, vec):
+        return point + vec
+
+    @staticmethod
+    def _point_sub(p1, p2):
+        return p1 - p2
+
+    @staticmethod
+    def _vector_sub(point, vec):
+        return point - vec
+
+    @staticmethod
+    def _scalar_mul(scalar, vec):
+        return scalar * vec
+
     def __init__(self, value, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._value = value
@@ -124,15 +152,15 @@ class Point:
         self._assert_has_vector_class()
         try:
             self._assert_is_point(other)
-            return self._vector_class(self._value - other._value)
+            return self._vector_class(self._point_sub(self._value, other._value))
         except TypeError:
             self._assert_is_vector(other)
-            return self.__class__(self._value - other._value)
+            return self.__class__(self._vector_sub(self._value, other._value))
 
     def __add__(self, other):
         self._assert_has_vector_class()
         self._assert_is_vector(other)
-        return self.__class__(self._value + other._value)
+        return self.__class__(self._vector_add(self._value, other._value))
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self._value == other._value

@@ -354,6 +354,25 @@ class Time(Point):
         link_vector_class --> link_duration_class
     """
 
+    class Duration(Point.Vector):
+
+        @classmethod
+        def _assert_has_time_class(cls):
+            cls._assert_has_point_class()
+
+        @classmethod
+        def _assert_is_duration(cls, other):
+            cls._assert_is_vector(other)
+
+        def __init__(self, value, *args, **kwargs):
+            # if value is derived from Time.Duration, try to convert to converter to this type and get the _value
+            if Time.Duration in value.__class__.__mro__:
+                value = value.convert_to(self.__class__)._value
+            super().__init__(value, *args, **kwargs)
+
+        def to_time(self):
+            self._assert_has_time_class()
+            return self._time_class(self._value)
     @classmethod
     def create_duration_class(cls, name=None, *, force_overwrite=False):
         # give it a proper default name

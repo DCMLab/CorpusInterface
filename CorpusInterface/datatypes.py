@@ -475,6 +475,24 @@ class MIDIPitchClass(MIDIPitch):
 Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_MIDIPitch)
 
 
+class MIDIPitchClassInterval(Pitch.Interval):
+
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(value, *args, **kwargs)
+        self._value %= 12
+        if self._value > 6:
+            self._value -= 12
+
+    def __int__(self):
+        return int(self._value)
+
+    def to_pitch(self):
+        return self._pitch_class(self._value % 12)
+
+
+MIDIPitchClass.link_interval_class(MIDIPitchClassInterval, force_overwrite=True)
+
+
 class Event:
 
     def __init__(self, time, duration, data):

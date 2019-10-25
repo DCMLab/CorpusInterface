@@ -193,7 +193,7 @@ class Pitch(Point):
 
         def __init__(self, value, *args, **kwargs):
             # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
-            if Pitch.Interval in value.__class__.__bases__:
+            if Pitch.Interval in value.__class__.__mro__:
                 value = value.convert_to(self.__class__)._value
             super().__init__(value, *args, **kwargs)
 
@@ -331,7 +331,7 @@ class Pitch(Point):
 
     def __init__(self, value, *args, **kwargs):
         # if value is derived from Pitch, try to convert to converter to this type and get the _value
-        if Pitch in value.__class__.__bases__:
+        if Pitch in value.__class__.__mro__:
             value = value.convert_to(self.__class__)._value
         super().__init__(value, *args, **kwargs)
 

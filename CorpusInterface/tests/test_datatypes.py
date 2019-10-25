@@ -26,11 +26,15 @@ class TestPoint(TestCase):
 
                     if Base == Pitch:
                         # create interval class
-                        NewBase.create_interval_class()
+                        @NewBase.link_interval_class()
+                        class NewBaseInterval(Pitch.Interval):
+                            pass
                         # assert second call raises an error
                         self.assertRaises(AttributeError, lambda: NewBase.create_interval_class())
                         # assert overwriting can be forced
-                        NewBaseInterval = NewBase.create_interval_class(force_overwrite=True)
+                        @NewBase.link_interval_class(force_overwrite=True)
+                        class NewBaseInterval(Pitch.Interval):
+                            pass
 
                         # check class assignment
                         self.assertEqual(NewBase._vector_class, NewBaseInterval)
@@ -72,11 +76,15 @@ class TestPoint(TestCase):
                         NewBaseVector = NewBaseDuration
                     else:
                         # create vector class
-                        NewBase.create_vector_class()
+                        @NewBase.link_vector_class()
+                        class NewBaseVector(Point.Vector):
+                            pass
                         # assert second call raises an error
                         self.assertRaises(AttributeError, lambda: NewBase.create_vector_class())
                         # assert overwriting can be forced
-                        NewBaseVector = NewBase.create_vector_class(force_overwrite=True)
+                        @NewBase.link_vector_class(force_overwrite=True)
+                        class NewBaseVector(Point.Vector):
+                            pass
 
                         # check class assignment
                         self.assertEqual(NewBase._vector_class, NewBaseVector)
@@ -156,7 +164,9 @@ class TestConverters(TestCase):
             """Use integer representation: 5 --> 5"""
             def __init__(self, value, *args, **kwargs):
                 super().__init__(int(value), *args, **kwargs)
-        PitchAInterval = PitchA.create_interval_class()
+        @PitchA.link_interval_class()
+        class PitchAInterval(Pitch.Interval):
+            pass
 
         class PitchB(Pitch):
             """Use string representation: 5 --> '5'"""
@@ -171,7 +181,9 @@ class TestConverters(TestCase):
             def to_vector(self):
                 return self._vector_class(int(self._value))
         Pitch.register_converter(PitchB, PitchA, PitchB.convert_to_PitchA)
-        PitchBInterval = PitchB.create_interval_class()
+        @PitchB.link_interval_class()
+        class PitchBInterval(Pitch.Interval):
+            pass
 
         # instantiate objects and check (in)equality and conversion)
         a = PitchA(5)
@@ -198,7 +210,9 @@ class TestConverters(TestCase):
                 super().__init__(value, *args, **kwargs)
             def to_vector(self):
                 return self._vector_class(len(self._value))
-        PitchCInterval = PitchC.create_interval_class()
+        @PitchC.link_interval_class()
+        class PitchCInterval(Pitch.Interval):
+            pass
 
         # instantiate object and check (in)equality
         c = PitchC([0, 0, 0, 0, 0])

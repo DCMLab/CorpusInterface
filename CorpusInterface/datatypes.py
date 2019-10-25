@@ -68,48 +68,36 @@ class Point:
             return self._point_class(self._value)
 
     @classmethod
-    def create_vector_class(cls, name=None, *, force_overwrite=False, vector_class=None):
+    def link_vector_class(point_class, *, force_overwrite=False):
         """
-        Create the corresponding vector class for this point class and link the two classes
-        :param name: optional name for the vector class (default is to append "Vector" to the point class name)
-        :param force_overwrite: whether to overwrite an existing vector class
-        :param vector_class: an optional class, derived from Vector, that is used as base class
-        :return: the vector class object
-        """
-        # if class was provided check that it is actually derived from Vector
-        if vector_class is not None:
-            if Point.Vector not in vector_class.__bases__:
-                raise TypeError(f"Provided class {vector_class} does not derive from {Point.Vector}")
-        else:
-            vector_class = Point.Vector
-        # create vector class derived from abstract vector class
-        vector_class = type(cls.__name__ + "Vector" if name is None else name,
-                            (vector_class,),
-                            {})
-        # link classes
-        cls.link_vector_class(vector_class, force_overwrite=force_overwrite)
-        # return class
-        return vector_class
-
-    @classmethod
-    def link_vector_class(cls, vcls, *, force_overwrite=False):
-        """
-        Link point class 'cls' and vector class 'vcls' by adding _vector_class and _point_class attribute, respectively.
-        Raises an error if one of the classes already has the corresponding attribute, which would be overwritten.
-        Overwriting can be forced by setting force_overwrite=True. This is for instance needed when linking a vector
-        class to a point class that was derived from another point class, which already has an associated vector class.
-        :param vcls: vector class to be linked (will be modified by adding the _point_class attribute)
+        Class decorator to link 'point_class' and the specified vector class by adding _vector_class and _point_class
+        attribute, respectively. Raises an error if one of the classes already has the corresponding attribute, which
+        would be overwritten. Overwriting can be forced by setting force_overwrite=True. This is for instance needed
+        when linking a vector class to a point class that was derived from another point class, which already has an
+        associated vector class.
         :param force_overwrite: ignore existing links
         """
-        # check if point class already has an associated vector class
-        if hasattr(cls, "_vector_class") and not force_overwrite:
-            raise AttributeError(f"Class '{cls}' already has an associated vector class ({cls._vector_class})")
-        # check if point class already has an associated vector class
-        if hasattr(vcls, "_point_class") and not force_overwrite:
-            raise AttributeError(f"Class '{vcls}' already has an associated point class ({vcls._point_class})")
-        # let the point class know its vector class and vice versa
-        cls._vector_class = vcls
-        vcls._point_class = cls
+        def decorator(vector_class):
+            """
+            :param vector_class: vector class to be linked (will be modified by adding the _point_class attribute)
+            :return: modified vector_class
+            """
+            # check that provided class is actually derived from Vector
+            if Point.Vector not in vector_class.__mro__:
+                raise TypeError(f"Provided class {vector_class} does not derive from {Point.Vector}")
+            # check if point class already has an associated vector class
+            if hasattr(point_class, "_vector_class") and not force_overwrite:
+                raise AttributeError(
+                    f"Class '{point_class}' already has an associated vector class ({point_class._vector_class})")
+            # check if vector class already has an associated point class
+            if hasattr(vector_class, "_point_class") and not force_overwrite:
+                raise AttributeError(
+                    f"Class '{vector_class}' already has an associated point class ({vector_class._point_class})")
+            # let the point class know its vector class and vice versa
+            point_class._vector_class = vector_class
+            vector_class._point_class = point_class
+            return vector_class
+        return decorator
 
     @classmethod
     def _assert_has_vector_class(cls):
@@ -308,26 +296,18 @@ class Pitch(Point):
                 raise NotImplementedError(f"There are no converters registered for type '{cls}'")
 
     @classmethod
-    def create_interval_class(pitch_class, name=None, *, force_overwrite=False):
-        # give it a proper default name
-        if name is None:
-            name = pitch_class.__name__ + "Interval"
-        # call parent function to create
-        interval_class = pitch_class.create_vector_class(name=name,
-                                                         force_overwrite=force_overwrite,
-                                                         vector_class=Pitch.Interval)
-        # add properly renamed versions
-        interval_class.to_pitch = interval_class.to_point
-        pitch_class._interval_class = pitch_class._vector_class
-        interval_class._pitch_class = interval_class._point_class
-        # return
-        return interval_class
-
-    @classmethod
-    def link_interval_class(pitch_class, interval_class, *, force_overwrite=False):
-        pitch_class.link_vector_class(interval_class, force_overwrite=force_overwrite)
-        pitch_class._interval_class = pitch_class._vector_class
-        interval_class._pitch_class = interval_class._point_class
+    def link_interval_class(pitch_class, *, force_overwrite=False):
+        def decorator(interval_class):
+            # check that provided class is actually derived from Interval
+            if Pitch.Interval not in interval_class.__mro__:
+                raise TypeError(f"Provided class {interval_class} does not derive from {Pitch.Interval}")
+            # execute Point decorator
+            interval_class = pitch_class.link_vector_class(force_overwrite=force_overwrite)(interval_class)
+            # add renamed versions
+            pitch_class._interval_class = pitch_class._vector_class
+            interval_class._pitch_class = interval_class._point_class
+            return interval_class
+        return decorator
 
     def __init__(self, value, *args, **kwargs):
         # if value is derived from Pitch, try to convert to converter to this type and get the _value
@@ -373,21 +353,20 @@ class Time(Point):
         def to_time(self):
             self._assert_has_time_class()
             return self._time_class(self._value)
-    @classmethod
-    def create_duration_class(cls, name=None, *, force_overwrite=False):
-        # give it a proper default name
-        if name is None:
-            name = cls.__name__+"Duration"
-        # call parent function to create
-        duration_class = cls.create_vector_class(name=name, force_overwrite=force_overwrite)
-        # add properly renamed version of to_point
-        duration_class.to_time = duration_class.to_point
-        # return
-        return duration_class
 
     @classmethod
-    def link_duration_class(cls, icls, *, force_overwrite=False):
-        cls.link_vector_class(icls, force_overwrite=force_overwrite)
+    def link_duration_class(time_class, *, force_overwrite=False):
+        def decorator(duration_class):
+            # check that provided class is actually derived from Duration
+            if Time.Duration not in duration_class.__mro__:
+                raise TypeError(f"Provided class {duration_class} does not derive from {Time.Duration}")
+            # execute Point decorator
+            duration_class = time_class.link_vector_class(force_overwrite=force_overwrite)(duration_class)
+            # add renamed versions
+            time_class._duration_class = time_class._vector_class
+            duration_class._time_class = duration_class._point_class
+            return duration_class
+        return decorator
 
     def to_duration(self):
         return self.to_vector()
@@ -408,7 +387,9 @@ class LinearTime(Time):
         return float(self._value)
 
 
-LinearTimeDuration = LinearTime.create_duration_class()
+@LinearTime.link_duration_class()
+class LinearTimeDuration(Time.Duration):
+    pass
 
 
 class MIDIPitch(Pitch):
@@ -468,7 +449,9 @@ class MIDIPitch(Pitch):
         return f"{base_names[self.pitch_class()]}{self.octave()}"
 
 
-MIDIPitchInterval = MIDIPitch.create_interval_class()
+@MIDIPitch.link_interval_class()
+class MIDIPitchInterval(Pitch.Interval):
+    pass
 
 
 class MIDIPitchClass(MIDIPitch):
@@ -496,6 +479,7 @@ class MIDIPitchClass(MIDIPitch):
 Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_MIDIPitch)
 
 
+@MIDIPitchClass.link_interval_class(force_overwrite=True)
 class MIDIPitchClassInterval(Pitch.Interval):
 
     def __init__(self, value, *args, **kwargs):
@@ -509,9 +493,6 @@ class MIDIPitchClassInterval(Pitch.Interval):
 
     def to_pitch(self):
         return self._pitch_class(self._value % 12)
-
-
-MIDIPitchClass.link_interval_class(MIDIPitchClassInterval, force_overwrite=True)
 
 
 class Event:

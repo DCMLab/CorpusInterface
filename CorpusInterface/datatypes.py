@@ -96,7 +96,8 @@ class Point:
         """
         Link point class 'cls' and vector class 'vcls' by adding _vector_class and _point_class attribute, respectively.
         Raises an error if one of the classes already has the corresponding attribute, which would be overwritten.
-        Overwriting can be forced by setting force_overwrite=True.
+        Overwriting can be forced by setting force_overwrite=True. This is for instance needed when linking a vector
+        class to a point class that was derived from another point class, which already has an associated vector class.
         :param vcls: vector class to be linked (will be modified by adding the _point_class attribute)
         :param force_overwrite: ignore existing links
         """
@@ -451,6 +452,10 @@ MIDIPitchInterval = MIDIPitch.create_interval_class()
 
 class MIDIPitchClass(MIDIPitch):
 
+    @staticmethod
+    def convert_from_MIDIPitch(midi_pitch):
+        return MIDIPitchClass(midi_pitch._value)
+
     def __init__(self, value, *args, **kwargs):
         if isinstance(value, MIDIPitch):
             super().__init__(value._value % 12, *args, **kwargs)
@@ -467,6 +472,9 @@ class MIDIPitchClass(MIDIPitch):
         else:
             raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
         return f"{base_names[self.pitch_class()]}"
+
+
+Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_MIDIPitch)
 
 
 class Event:

@@ -129,13 +129,23 @@ class TestConverters(TestCase):
     def test_converters(self):
         # define classes A and B with a converter A-->B
         class PitchA(Pitch):
-            pass
+            """Use integer representation: 5 --> 5"""
+            def __init__(self, value, *args, **kwargs):
+                super().__init__(int(value), *args, **kwargs)
         PitchAInterval = PitchA.create_interval_class()
 
         class PitchB(Pitch):
+            """Use string representation: 5 --> '5'"""
             @staticmethod
             def convert_to_PitchA(pitch_b):
                 return PitchA(int(pitch_b._value))
+            @staticmethod
+            def _point_sub(p1, p2):
+                return int(p1) - int(p2)
+            def __init__(self, value, *args, **kwargs):
+                super().__init__(str(value), *args, **kwargs)
+            def to_vector(self):
+                return self._vector_class(int(self._value))
         Pitch.register_converter(PitchB, PitchA, PitchB.convert_to_PitchA)
         PitchBInterval = PitchB.create_interval_class()
 
@@ -151,9 +161,19 @@ class TestConverters(TestCase):
 
         # define another class C with converter C-->A
         class PitchC(Pitch):
+            """Use list representation: 5 --> [0, 0, 0, 0, 0]"""
             @staticmethod
             def convert_to_PitchB(pitch_c):
                 return PitchB(str(len(pitch_c._value)))
+            @staticmethod
+            def _point_sub(p1, p2):
+                return [0] * (len(p1) - len(p2))
+            def __init__(self, value, *args, **kwargs):
+                if isinstance(value, int):
+                    value = [0] * value
+                super().__init__(value, *args, **kwargs)
+            def to_vector(self):
+                return self._vector_class(len(self._value))
         PitchCInterval = PitchC.create_interval_class()
 
         # instantiate object and check (in)equality
@@ -182,10 +202,10 @@ class TestConverters(TestCase):
                 self.assertEqual(c.convert_to(PitchA), a)
                 self.assertEqual(ci.convert_to(PitchAInterval), ai)
 
-        # define a direct converter C-->A which returns a fixed/wrong object
+        # define a direct converter C-->A which returns a version scaled by 10
         # (to detect whether the old or now converter was used)
         def direct_but_wrong_converter_from_C_to_A(c):
-            return PitchA(55)
+            return PitchA(10 * len(c._value))
         # check again that the implicit converter exists
         self.assertEqual(c.convert_to(PitchA), a)
         self.assertEqual(ci.convert_to(PitchAInterval), ai)
@@ -197,8 +217,8 @@ class TestConverters(TestCase):
         self.assertEqual(type(ai), type(ci.convert_to(PitchAInterval)))
         self.assertNotEqual(a, c.convert_to(PitchA))
         self.assertNotEqual(ai, ci.convert_to(PitchAInterval))
-        self.assertEqual(PitchA(55), c.convert_to(PitchA))
-        self.assertEqual(PitchAInterval(55), ci.convert_to(PitchAInterval))
+        self.assertEqual(PitchA(50), c.convert_to(PitchA))
+        self.assertEqual(PitchAInterval(50), ci.convert_to(PitchAInterval))
 
         # trying to re-register should raise a ValueError because a direct converter now exists
         self.assertRaises(ValueError,

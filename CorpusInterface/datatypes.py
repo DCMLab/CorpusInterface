@@ -398,27 +398,27 @@ class MIDIPitch(Pitch):
     name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>-?[0-9]+)$")
 
     def __init__(self, value, part=None, expect_int=True, *args, **kwargs):
-        if isinstance(value, str):
+        super().__init__(value=value, *args, **kwargs)
+        if isinstance(self._value, str):
             # extract pitch class, modifiers, and octave
-            match = MIDIPitch.name_regex.match(value)
+            match = MIDIPitch.name_regex.match(self._value)
             if match is None:
-                raise ValueError(f"{value} does not match the regular expression for MIDI pitch names "
+                raise ValueError(f"{self._value} does not match the regular expression for MIDI pitch names "
                                  f"'{MIDIPitch.name_regex.pattern}'.")
             # initialise value with diatonic pitch class
-            value = MIDIPitch._diatonic_pitch_class[match['class']]
+            self._value = MIDIPitch._diatonic_pitch_class[match['class']]
             # add modifiers
             if "#" in match['modifiers']:
-                value += len(match['modifiers'])
+                self._value += len(match['modifiers'])
             else:
-                value -= len(match['modifiers'])
+                self._value -= len(match['modifiers'])
             # add octave
-            value += 12 * (int(match['octave']) + 1)
+            self._value += 12 * (int(match['octave']) + 1)
         if expect_int:
-            int_value = int(value)
-            if int_value != value:
-                raise ValueError(f"Expected integer pitch value but got {value}")
-            value = int_value
-        super().__init__(value=value, *args, **kwargs)
+            int_value = int(self._value)
+            if int_value != self._value:
+                raise ValueError(f"Expected integer pitch value but got {self._value}")
+            self._value = int_value
         self.part = part
         # compute frequency
         self.freq = 2 ** ((self._value - 69) / 12) * 440
@@ -457,10 +457,8 @@ class MIDIPitchClass(MIDIPitch):
         return MIDIPitchClass(midi_pitch._value)
 
     def __init__(self, value, *args, **kwargs):
-        if isinstance(value, MIDIPitch):
-            super().__init__(value._value % 12, *args, **kwargs)
-        else:
-            super().__init__(value % 12, *args, **kwargs)
+        super().__init__(value, *args, **kwargs)
+        self._value %= 12
 
     def name(self, sharp_flat=None):
         if sharp_flat is None:

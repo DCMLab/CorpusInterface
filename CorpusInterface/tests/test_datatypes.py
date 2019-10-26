@@ -9,7 +9,7 @@ class TestPoint(TestCase):
     def test_create_vector_class(self):
 
         # check for different derived base types
-        for Base in [Point, Pitch]:
+        for Base in [Point, Pitch, Time]:
 
             # check operations/failure for both cases
             for with_vector in [True, False]:
@@ -30,9 +30,16 @@ class TestPoint(TestCase):
                         class NewBaseInterval(Pitch.Interval):
                             pass
                         # assert second call raises an error
-                        self.assertRaises(AttributeError, lambda: NewBase.create_interval_class())
+                        try:
+                            @NewBase.link_interval_class()
+                            class NewBaseInterval(Pitch.Interval):
+                                pass
+                        except AttributeError:
+                            pass
+                        else:
+                            self.fail("Should have raise AttributeError")
                         # assert overwriting can be forced
-                        @NewBase.link_interval_class(force_overwrite=True)
+                        @NewBase.link_interval_class(overwrite_interval_class=True)
                         class NewBaseInterval(Pitch.Interval):
                             pass
 
@@ -44,20 +51,26 @@ class TestPoint(TestCase):
                         i1 = NewBaseInterval(np.random.randint(-10, 10))
                         i2 = NewBaseInterval(np.random.randint(-10, 10))
 
-                        # check class
-                        self.assertEqual(i1.__class__, NewBaseInterval)
-                        # check name attribute was set correctly
-                        self.assertEqual(i1.__class__.__name__, "NewBaseInterval")
-
                         # interval class corresponds to vector class below
                         NewBaseVector = NewBaseInterval
                     elif Base == Time:
                         # create duration class
-                        NewBase.create_duration_class()
+                        @NewBase.link_duration_class()
+                        class NewBaseDuration(Time.Duration):
+                            pass
                         # assert second call raises an error
-                        self.assertRaises(AttributeError, lambda: NewBase.create_duration_class())
+                        try:
+                            @NewBase.link_duration_class()
+                            class NewBaseDuration(Time.Duration):
+                                pass
+                        except AttributeError:
+                            pass
+                        else:
+                            self.fail("Should have raise AttributeError")
                         # assert overwriting can be forced
-                        NewBaseDuration = NewBase.create_duration_class(force_overwrite=True)
+                        @NewBase.link_duration_class(overwrite_duration_class=True)
+                        class NewBaseDuration(Time.Duration):
+                            pass
 
                         # check class assignment
                         self.assertEqual(NewBase._vector_class, NewBaseDuration)
@@ -67,11 +80,6 @@ class TestPoint(TestCase):
                         i1 = NewBaseDuration(np.random.randint(-10, 10))
                         i2 = NewBaseDuration(np.random.randint(-10, 10))
 
-                        # check class
-                        self.assertEqual(i1.__class__, NewBaseDuration)
-                        # check name attribute was set correctly
-                        self.assertEqual(i1.__class__.__name__, "NewBaseDuration")
-
                         # duration class corresponds to vector class below
                         NewBaseVector = NewBaseDuration
                     else:
@@ -80,9 +88,16 @@ class TestPoint(TestCase):
                         class NewBaseVector(Point.Vector):
                             pass
                         # assert second call raises an error
-                        self.assertRaises(AttributeError, lambda: NewBase.create_vector_class())
+                        try:
+                            @NewBase.link_vector_class()
+                            class NewBaseVector(Point.Vector):
+                                pass
+                        except AttributeError:
+                            pass
+                        else:
+                            self.fail("Should have raise AttributeError")
                         # assert overwriting can be forced
-                        @NewBase.link_vector_class(force_overwrite=True)
+                        @NewBase.link_vector_class(overwrite_vector_class=True)
                         class NewBaseVector(Point.Vector):
                             pass
 
@@ -93,11 +108,6 @@ class TestPoint(TestCase):
                         # create vector objects
                         i1 = NewBaseVector(np.random.randint(-10, 10))
                         i2 = NewBaseVector(np.random.randint(-10, 10))
-
-                        # check class
-                        self.assertEqual(i1.__class__, NewBaseVector)
-                        # check name attribute was set correctly
-                        self.assertEqual(i1.__class__.__name__, "NewBaseVector")
 
                     # transform a point to an vector and vice versa
                     self.assertEqual(NewBaseVector(p1._value), p1.to_vector())

@@ -501,15 +501,18 @@ class MIDIPitchInterval(Pitch.Interval):
         return int(self._value)
 
 
-class MIDIPitchClass(MIDIPitch):
+class MIDIPitchClass(MIDIPitch, PitchClass):
 
     @staticmethod
     def convert_from_MIDIPitch(midi_pitch):
         return MIDIPitchClass(midi_pitch._value)
 
+    @staticmethod
+    def _octave():
+        return 12
+
     def __init__(self, value, *args, **kwargs):
         super().__init__(value=value, *args, **kwargs)
-        self._value %= 12
 
     def name(self, sharp_flat=None):
         if sharp_flat is None:
@@ -527,19 +530,8 @@ Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_
 
 
 @MIDIPitchClass.link_interval_class(force_overwrite=True)
-class MIDIPitchClassInterval(Pitch.Interval):
-
-    def __init__(self, value, *args, **kwargs):
-        super().__init__(value=value, *args, **kwargs)
-        self._value %= 12
-        if self._value > 6:
-            self._value -= 12
-
-    def __int__(self):
-        return int(self._value)
-
-    def to_pitch(self):
-        return self._pitch_class(self._value % 12)
+class MIDIPitchClassInterval(MIDIPitchInterval, PitchClass.PitchClassInterval):
+    pass
 
 
 class Event:

@@ -525,9 +525,6 @@ class MIDIPitchClass(MIDIPitch, PitchClass):
     def _octave():
         return 12
 
-    def __init__(self, value, *args, **kwargs):
-        super().__init__(value=value, *args, **kwargs)
-
     def name(self, sharp_flat=None):
         if sharp_flat is None:
             sharp_flat = "sharp"

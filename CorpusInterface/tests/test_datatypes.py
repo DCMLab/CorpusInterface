@@ -144,8 +144,8 @@ class TestMIDIPitch(TestCase):
             self.assertEqual(MIDIPitchClass(from_sharp), MIDIPitchClass(midi_number % 12))
 
     def test_freq(self):
-        self.assertEqual(MIDIPitch("A4").freq, 440)
-        self.assertEqual(MIDIPitch("A5").freq, 880)
+        self.assertEqual(MIDIPitch("A4").freq(), 440)
+        self.assertEqual(MIDIPitch("A5").freq(), 880)
 
     def test_arithmetics(self):
         c4 = MIDIPitch("C4")

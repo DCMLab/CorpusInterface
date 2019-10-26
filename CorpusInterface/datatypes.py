@@ -429,8 +429,6 @@ class MIDIPitch(Pitch):
                 raise ValueError(f"Expected integer pitch value but got {self._value}")
             self._value = int_value
         self.part = part
-        # compute frequency
-        self.freq = 2 ** ((self._value - 69) / 12) * 440
 
     def __int__(self):
         return self._value
@@ -441,8 +439,8 @@ class MIDIPitch(Pitch):
     def octave(self):
         return self._value // 12 - 1
 
-    def pitch_class(self):
-        return self._value % 12
+    def freq(self):
+        return 2 ** ((self._value - 69) / 12) * 440
 
     def name(self, sharp_flat=None):
         if sharp_flat is None:
@@ -453,7 +451,7 @@ class MIDIPitch(Pitch):
             base_names = self._base_names_flat
         else:
             raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
-        return f"{base_names[self.pitch_class()]}{self.octave()}"
+        return f"{base_names[self._value % 12]}{self.octave()}"
 
 
 @MIDIPitch.link_interval_class()

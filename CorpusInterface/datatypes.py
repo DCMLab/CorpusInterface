@@ -332,6 +332,47 @@ class Pitch(Point):
         return self.to_vector()
 
 
+class PitchClass(Pitch):
+    """
+    Mixin class for pitch-class functionality. A new pitch-class can be implemented by deriving from both a Pitch type
+    and this PitchClass class.
+    """
+
+    class PitchClassInterval(Pitch.Interval):
+        """
+        Mixin class for pitch-class-intervals. A new pitch-class-interval can be implemented by deriving from both an
+        Interval type and this PitchClassInterval class.
+        """
+
+        def __init__(self, value, *args, **kwargs):
+            super().__init__(value=value, *args, **kwargs)
+            self._value = self._map_down(self._value)
+
+        @classmethod
+        def _map_down(cls, value):
+            value %= cls._pitch_class._octave()
+            if value > cls._pitch_class._octave() / 2:
+                value = value - cls._pitch_class._octave()
+            return value
+
+        def phase_diff(self):
+            return self._value / self._pitch_class._octave()
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(value=value, *args, **kwargs)
+        self._value = self._map_down(self._value)
+
+    @staticmethod
+    def _octave():
+        raise NotImplementedError
+
+    @classmethod
+    def _map_down(cls, value):
+        return value % cls._octave()
+
+    def phase(self):
+        return self._value / self._octave()
+
+
 class Time(Point):
     """
     Base class for time-like types. Behaves like Point/Vector but adds renamed versions for:

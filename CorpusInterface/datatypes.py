@@ -1,4 +1,6 @@
 import re
+import numpy as np
+import numbers
 
 
 class Point:
@@ -551,6 +553,84 @@ Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_
 
 @MIDIPitchClass.link_interval_class(overwrite_interval_class=True, overwrite_pitch_class=True)
 class MIDIPitchClassInterval(MIDIPitchInterval, PitchClass.PitchClassInterval):
+    pass
+
+
+class LogFreqPitch(Pitch):
+    """
+    Represents a pitch in continuous frequency space with the frequency value stored in log representation.
+    """
+
+    @staticmethod
+    def convert_from_midi_pitch(midi_pitch):
+        return LogFreqPitch(midi_pitch.freq(), is_freq=True)
+
+    def __init__(self, value, is_freq=False, *args, **kwargs):
+        """
+        Initialise from frequency or log-frequency value.
+        :param value: frequency or log-frequency (default) value
+        :param is_freq: whether value is frequency or log-frequency
+        """
+        if is_freq:
+            value = np.log(value)
+        super().__init__(value=value, *args, **kwargs)
+
+    def freq(self):
+        return np.exp(self._value)
+
+    def __float__(self):
+        return self._value
+
+    def __repr__(self):
+        return f"{np.format_float_positional(self.freq(), fractional=True, precision=2)}Hz"
+
+
+Pitch.register_converter(MIDIPitch, LogFreqPitch, LogFreqPitch.convert_from_midi_pitch)
+
+
+@LogFreqPitch.link_interval_class()
+class LogFreqPitchInterval(Pitch.Interval):
+    """
+    Represents an interval in continuous frequency space. An interval corresponds to a frequency ratio and is stored as
+    a log-frequency difference.
+    """
+
+    def __init__(self, value, is_freq_ratio=False, *args, **kwargs):
+        """
+        Initialise from frequency ratio or log-frequency difference.
+        :param value: frequency ratio or log-frequency difference (default)
+        :param is_freq_ratio: whether value is a frequency ratio or log-frequency difference
+        """
+        if is_freq_ratio:
+            value = np.log(value)
+        super().__init__(value=value, *args, **kwargs)
+
+    def ratio(self):
+        return np.exp(self._value)
+
+    def __float__(self):
+        return self._value
+
+    def __repr__(self):
+        return f"{np.format_float_positional(self.ratio(), fractional=True, precision=3)}"
+
+
+class LogFreqPitchClass(LogFreqPitch, PitchClass):
+
+    @staticmethod
+    def convert_from_LogFreqPitch(log_freq_pitch):
+        return LogFreqPitchClass(log_freq_pitch._value)
+
+    @staticmethod
+    def _octave():
+        return np.log(2)
+
+
+Pitch.register_converter(LogFreqPitch, LogFreqPitchClass, LogFreqPitchClass.convert_from_LogFreqPitch)
+
+
+@LogFreqPitchClass.link_interval_class(overwrite_interval_class=True, overwrite_pitch_class=True)
+class LogFreqPitchClassInterval(LogFreqPitchInterval, PitchClass.PitchClassInterval):
     pass
 
 

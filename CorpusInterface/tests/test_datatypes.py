@@ -1,6 +1,7 @@
 from unittest import TestCase
 from CorpusInterface.datatypes import Point, Pitch, Time
 from CorpusInterface.datatypes import MIDIPitch, MIDIPitchInterval, MIDIPitchClass, MIDIPitchClassInterval
+from CorpusInterface.datatypes import LogFreqPitch, LogFreqPitchClass
 import numpy as np
 
 
@@ -188,6 +189,27 @@ class TestMIDIPitch(TestCase):
 
         self.assertEqual(pci_cg.phase_diff(), 5 / 12)
         self.assertEqual(pci_dc.phase_diff(), 2 / 12)
+
+
+class TestLogFreqPitch(TestCase):
+
+    def test_against_MIDI(self):
+        c4 = MIDIPitch("C4")
+        d4 = MIDIPitch("D4")
+        lc4 = c4.convert_to(LogFreqPitch)
+        ld4 = d4.convert_to(LogFreqPitch)
+        pci = d4.convert_to(MIDIPitchClass) - c4.convert_to(MIDIPitchClass)
+        pci_ = pci
+        lpci = ld4.convert_to(LogFreqPitchClass) - lc4.convert_to(LogFreqPitchClass)
+        lpci_ = lpci
+        for _ in range(12):
+            # cannot use simple equality check because special case -0.5 and 0.5 have to evaluate to equal, too
+            # same point on unit circle (e.g. 0.2 == -0.8)
+            self.assertAlmostEqual(pci_.phase_diff() % 1, lpci_.phase_diff() % 1)
+            # same magnitude (e.g. 0.2 == -0.2)
+            self.assertAlmostEqual(abs(pci_.phase_diff()), abs(lpci_.phase_diff()))
+            pci_ = pci_ + pci
+            lpci_ = lpci_ + lpci
 
 
 class TestConverters(TestCase):

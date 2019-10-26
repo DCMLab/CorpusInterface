@@ -462,27 +462,30 @@ class MIDIPitch(Pitch):
     name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>-?[0-9]+)$")
 
     def __init__(self, value, part=None, expect_int=True, *args, **kwargs):
-        super().__init__(value=value, *args, **kwargs)
-        if isinstance(self._value, str):
+        # pre-process value
+        if isinstance(value, str):
             # extract pitch class, modifiers, and octave
-            match = MIDIPitch.name_regex.match(self._value)
+            match = MIDIPitch.name_regex.match(value)
             if match is None:
-                raise ValueError(f"{self._value} does not match the regular expression for MIDI pitch names "
+                raise ValueError(f"{value} does not match the regular expression for MIDI pitch names "
                                  f"'{MIDIPitch.name_regex.pattern}'.")
             # initialise value with diatonic pitch class
-            self._value = MIDIPitch._diatonic_pitch_class[match['class']]
+            value = MIDIPitch._diatonic_pitch_class[match['class']]
             # add modifiers
             if "#" in match['modifiers']:
-                self._value += len(match['modifiers'])
+                value += len(match['modifiers'])
             else:
-                self._value -= len(match['modifiers'])
+                value -= len(match['modifiers'])
             # add octave
-            self._value += 12 * (int(match['octave']) + 1)
-        if expect_int:
-            int_value = int(self._value)
-            if int_value != self._value:
-                raise ValueError(f"Expected integer pitch value but got {self._value}")
-            self._value = int_value
+            value += 12 * (int(match['octave']) + 1)
+        elif isinstance(value, numbers.Number) and expect_int:
+            int_value = int(value)
+            if int_value != value:
+                raise ValueError(f"Expected integer pitch value but got {value}")
+            value = int_value
+        # hand on initialisation to other base classes
+        super().__init__(value=value, *args, **kwargs)
+        # finish initialisation
         self.part = part
 
     def __int__(self):

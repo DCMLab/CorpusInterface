@@ -497,7 +497,8 @@ class MIDIPitch(Pitch):
 
 @MIDIPitch.link_interval_class()
 class MIDIPitchInterval(Pitch.Interval):
-    pass
+    def __int__(self):
+        return int(self._value)
 
 
 class MIDIPitchClass(MIDIPitch):

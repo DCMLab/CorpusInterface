@@ -203,7 +203,11 @@ class Pitch(Point):
             origin_to = (other_interval - other_interval).to_pitch() # point
             origin_difference = origin_to - origin_from # vector
             # now we add that difference (we move from the "from" origin to the "to" origin)
-            return other_interval + origin_difference
+            out = other_interval + origin_difference
+            # check for correct type
+            if not isinstance(out, other_type):
+                raise TypeError(f"Conversion failed, expected type {other_type} but got {type(out)}")
+            return out
 
     # store converters for classes derived from Pitch;
     # it's a dict of dicts, so that __converters__[A][B] returns is a list of functions that, when executed
@@ -319,6 +323,9 @@ class Pitch(Point):
         ret = self
         for converter in self.__class__.get_converter(other_type):
             ret = converter(ret)
+        # check for correct type
+        if not isinstance(ret, other_type):
+            raise TypeError(f"Conversion failed, expected type {other_type} but got {type(ret)}")
         return ret
 
     def to_interval(self):

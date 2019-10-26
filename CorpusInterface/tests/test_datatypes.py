@@ -1,7 +1,7 @@
 from unittest import TestCase
 from CorpusInterface.datatypes import Point, Pitch, Time
-from CorpusInterface.datatypes import MIDIPitch, MIDIPitchInterval, MIDIPitchClass, MIDIPitchClassInterval
-from CorpusInterface.datatypes import LogFreqPitch, LogFreqPitchClass
+from CorpusInterface.datatypes import MIDIPitch, MIDIPitchInterval
+from CorpusInterface.datatypes import LogFreqPitch
 import numpy as np
 
 
@@ -151,8 +151,8 @@ class TestMIDIPitch(TestCase):
             self.assertEqual(from_flat, from_number)
             self.assertEqual(from_sharp, from_number)
             self.assertEqual(midi_number, int(from_number))
-            self.assertEqual(MIDIPitchClass(from_flat), MIDIPitchClass(midi_number % 12))
-            self.assertEqual(MIDIPitchClass(from_sharp), MIDIPitchClass(midi_number % 12))
+            self.assertEqual(from_flat.to_pitch_class()._value, midi_number % 12)
+            self.assertEqual(from_sharp.to_pitch_class()._value, midi_number % 12)
 
     def test_freq(self):
         self.assertEqual(MIDIPitch("A4").freq(), 440)
@@ -167,20 +167,20 @@ class TestMIDIPitch(TestCase):
         self.assertEqual(icg, MIDIPitchInterval(-7))
         self.assertEqual(idc, MIDIPitchInterval(2))
 
-        pc_c4 = c4.convert_to(MIDIPitchClass)
-        pc_d4 = d4.convert_to(MIDIPitchClass)
-        pc_g4 = g4.convert_to(MIDIPitchClass)
+        pc_c4 = c4.to_pitch_class()
+        pc_d4 = d4.to_pitch_class()
+        pc_g4 = g4.to_pitch_class()
         pci_cg = pc_c4 - pc_g4
         pci_dc = pc_d4 - pc_c4
 
-        self.assertEqual(icg.convert_to(MIDIPitchClassInterval), MIDIPitchClassInterval(icg))
+        self.assertEqual(icg.to_interval_class(), MIDIPitchInterval(icg, is_interval_class=True))
 
-        self.assertEqual(pci_cg, MIDIPitchClassInterval(5))
-        self.assertEqual(pci_cg, MIDIPitchClassInterval(-7))
-        self.assertEqual(int(pci_cg), 5)
+        self.assertEqual(pci_cg, MIDIPitchInterval(5, is_interval_class=True))
+        self.assertEqual(pci_cg, MIDIPitchInterval(-7, is_interval_class=True))
+        self.assertEqual(pci_cg._value, 5)
 
-        self.assertEqual(pci_dc, MIDIPitchClassInterval(2))
-        self.assertEqual(pci_dc, MIDIPitchClassInterval(-10))
+        self.assertEqual(pci_dc, MIDIPitchInterval(2, is_interval_class=True))
+        self.assertEqual(pci_dc, MIDIPitchInterval(-10, is_interval_class=True))
         self.assertEqual(int(pci_dc), 2)
 
         self.assertEqual(pc_c4.phase(), 0)
@@ -198,9 +198,9 @@ class TestLogFreqPitch(TestCase):
         d4 = MIDIPitch("D4")
         lc4 = c4.convert_to(LogFreqPitch)
         ld4 = d4.convert_to(LogFreqPitch)
-        pci = d4.convert_to(MIDIPitchClass) - c4.convert_to(MIDIPitchClass)
+        pci = d4.to_pitch_class() - c4.to_pitch_class()
         pci_ = pci
-        lpci = ld4.convert_to(LogFreqPitchClass) - lc4.convert_to(LogFreqPitchClass)
+        lpci = ld4.to_pitch_class() - lc4.to_pitch_class()
         lpci_ = lpci
         for _ in range(12):
             # cannot use simple equality check because special case -0.5 and 0.5 have to evaluate to equal, too
@@ -239,7 +239,12 @@ class TestConverters(TestCase):
         Pitch.register_converter(PitchB, PitchA, PitchB.convert_to_PitchA)
         @PitchB.link_interval_class()
         class PitchBInterval(Pitch.Interval):
-            pass
+            @staticmethod
+            def _vector_sub(vec1, vec2):
+                return str(int(vec1) - int(vec2))
+            @staticmethod
+            def _vector_add(vec1, vec2):
+                return str(int(vec1) + int(vec2))
 
         # instantiate objects and check (in)equality and conversion)
         a = PitchA(5)
@@ -268,7 +273,12 @@ class TestConverters(TestCase):
                 return self._vector_class(len(self._value))
         @PitchC.link_interval_class()
         class PitchCInterval(Pitch.Interval):
-            pass
+            @staticmethod
+            def _vector_sub(vec1, vec2):
+                return [0] * (len(vec1) - len(vec2))
+            @staticmethod
+            def _vector_add(vec1, vec2):
+                return [0] * (len(vec1) + len(vec2))
 
         # instantiate object and check (in)equality
         c = PitchC([0, 0, 0, 0, 0])

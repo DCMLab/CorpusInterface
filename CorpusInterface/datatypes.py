@@ -180,12 +180,62 @@ class Pitch(Point):
     class Interval(Point.Vector):
 
         @classmethod
+        def _map_to_interval_class(cls, value):
+            value %= cls._pitch_class._pitch_class_period()
+            if value > cls._pitch_class._pitch_class_period() / 2:
+                value -= cls._pitch_class._pitch_class_period()
+            return value
 
-        def __init__(self, value, *args, **kwargs):
+        def __init__(self, value, *args, is_interval_class=False, **kwargs):
             # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
             if Pitch.Interval in value.__class__.__mro__:
                 value = value.convert_to(self.__class__)._value
             super().__init__(value=value, *args, **kwargs)
+            if is_interval_class:
+                self._value = self._map_to_interval_class(self._value)
+                self._is_interval_class = True
+            else:
+                self._is_interval_class = False
+
+        def __sub__(self, other):
+            # do arithmetics
+            ret = super().__sub__(other)
+            # check for class/non-class
+            if self.is_interval_class() != other.is_interval_class():
+                raise TypeError(f"Cannot combine interval class and non-class types "
+                                f"(this: {self.is_interval_class()}, other: {other.is_interval_class()})")
+            # convert to class if required
+            return ret if not self.is_interval_class() else ret.to_interval_class()
+
+        def __add__(self, other):
+            # do arithmetics
+            ret = super().__add__(other)
+            # check for class/non-class
+            if self.is_interval_class() != other.is_interval_class():
+                raise TypeError(f"Cannot combine interval class and non-class types "
+                                f"(this: {self.is_interval_class()}, other: {other.is_interval_class()})")
+            # convert to class if required
+            return ret if not self.is_interval_class() else ret.to_interval_class()
+
+        def __mul__(self, other):
+            ret = super().__mul__(other)
+            return ret if not self.is_interval_class() else ret.to_interval_class()
+
+        def is_interval_class(self):
+            return self._is_interval_class
+
+        def to_interval_class(self):
+            return self.__class__(value=self._value, is_interval_class=True)
+
+        def phase_diff(self, two_pi=False):
+            if not self.is_interval_class():
+                return self.to_interval_class().phase_diff(two_pi=two_pi)
+            else:
+                normed_phase_diff = self._value / self._pitch_class._pitch_class_period()
+                if two_pi:
+                    return normed_phase_diff * 2 * np.pi
+                else:
+                    return normed_phase_diff
 
         def to_pitch(self):
             self._assert_has_point_class()
@@ -209,7 +259,7 @@ class Pitch(Point):
             # check for correct type
             if not isinstance(out, other_type):
                 raise TypeError(f"Conversion failed, expected type {other_type} but got {type(out)}")
-            return out
+            return out if not self.is_interval_class() else out.to_interval_class()
 
     # store converters for classes derived from Pitch;
     # it's a dict of dicts, so that __converters__[A][B] returns is a list of functions that, when executed
@@ -317,11 +367,71 @@ class Pitch(Point):
             return interval_class
         return decorator
 
-    def __init__(self, value, *args, **kwargs):
+    @classmethod
+    def _map_to_pitch_class(cls, value):
+        return (value - cls._pitch_class_origin()) % cls._pitch_class_period()
+
+    @classmethod
+    def _pitch_class_origin(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def _pitch_class_period(cls):
+        raise NotImplementedError
+
+    def __init__(self, value, *args, is_pitch_class=False, **kwargs):
         # if value is derived from Pitch, try to convert to converter to this type and get the _value
         if Pitch in value.__class__.__mro__:
             value = value.convert_to(self.__class__)._value
         super().__init__(value=value, *args, **kwargs)
+        if is_pitch_class:
+            self._value = self._map_to_pitch_class(self._value)
+            self._is_pitch_class = True
+        else:
+            self._is_pitch_class = False
+
+    def __sub__(self, other):
+        # do arithmetics
+        ret = super().__sub__(other)
+        # check for class/non-class
+        try:
+            other_is_class = other.is_pitch_class()
+        except AttributeError:
+            other_is_class = other.is_interval_class()
+        if self.is_pitch_class() != other_is_class:
+            raise TypeError(f"Cannot combine pitch class and non-class types "
+                            f"(this: {self.is_pitch_class()}, other: {other_is_class})")
+        # convert to class if required
+        try:
+            return ret if not self.is_pitch_class() else ret.to_pitch_class()
+        except AttributeError:
+            return ret if not self.is_pitch_class() else ret.to_interval_class()
+
+    def __add__(self, other):
+        # do arithmetics
+        ret = super().__add__(other)
+        # check for class/non-class
+        if self.is_pitch_class() != other.is_interval_class():
+            raise TypeError(f"Cannot combine pitch class and non-class types "
+                            f"(this: {self.is_pitch_class()}, other: {other.is_interval_class()})")
+        # convert to class if required
+        return ret if not self.is_pitch_class() else ret.to_pitch_class()
+
+    def is_pitch_class(self):
+        return self._is_pitch_class
+
+    def to_pitch_class(self):
+        return self.__class__(value=self._value, is_pitch_class=True)
+
+    def phase(self, two_pi=False):
+        if not self.is_pitch_class():
+            return self.to_pitch_class().phase(two_pi=two_pi)
+        else:
+            normed_phase = self._value / self._pitch_class_period()
+            if two_pi:
+                return normed_phase * 2 * np.pi
+            else:
+                return normed_phase
 
     def convert_to(self, other_type):
         if other_type == self.__class__:
@@ -333,60 +443,14 @@ class Pitch(Point):
             # check for correct type
             if not isinstance(ret, other_type):
                 raise TypeError(f"Conversion failed, expected type {other_type} but got {type(ret)}")
-            return ret
+            if not self.is_pitch_class() == ret._is_pitch_class:
+                raise TypeError(f"Conversion failed, inconsistent pitch class attribute "
+                                f"(before: {self.is_pitch_class()}, after: {ret._is_pitch_class})")
+            return ret if not self.is_pitch_class() else ret.to_pitch_class()
 
     def to_interval(self):
-        return self.to_vector()
-
-
-class PitchClass(Pitch):
-    """
-    Mixin class for pitch-class functionality. A new pitch-class can be implemented by deriving from both a Pitch type
-    and this PitchClass class.
-    """
-
-    class PitchClassInterval(Pitch.Interval):
-        """
-        Mixin class for pitch-class-intervals. A new pitch-class-interval can be implemented by deriving from both an
-        Interval type and this PitchClassInterval class.
-        """
-
-        def __init__(self, value, *args, **kwargs):
-            super().__init__(value=value, *args, **kwargs)
-            self._value = self._map_down(self._value)
-
-        @classmethod
-        def _map_down(cls, value):
-            value %= cls._pitch_class._octave()
-            if value > cls._pitch_class._octave() / 2:
-                value = value - cls._pitch_class._octave()
-            return value
-
-        def phase_diff(self, two_pi=False):
-            normed_phase_diff = self._value / self._pitch_class._octave()
-            if two_pi:
-                return normed_phase_diff * 2 * np.pi
-            else:
-                return normed_phase_diff
-
-    def __init__(self, value, *args, **kwargs):
-        super().__init__(value=value, *args, **kwargs)
-        self._value = self._map_down(self._value)
-
-    @staticmethod
-    def _octave():
-        raise NotImplementedError
-
-    @classmethod
-    def _map_down(cls, value):
-        return value % cls._octave()
-
-    def phase(self, two_pi=False):
-        normed_phase = self._value / self._octave()
-        if two_pi:
-            return normed_phase * 2 * np.pi
-        else:
-            return normed_phase
+        self._assert_has_vector_class()
+        return self._interval_class(self._value, is_interval_class=self.is_pitch_class())
 
 
 class Time(Point):
@@ -455,11 +519,20 @@ class MIDIPitch(Pitch):
     _diatonic_pitch_class = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
     _base_names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-    name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>-?[0-9]+)$")
+    name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>(-?[0-9]+)?)$")
 
-    def __init__(self, value, part=None, expect_int=True, *args, **kwargs):
+    @classmethod
+    def _pitch_class_origin(cls):
+        return 60
+
+    @classmethod
+    def _pitch_class_period(cls):
+        return 12
+
+    def __init__(self, value, *args, is_pitch_class=False, part=None, expect_int=True, **kwargs):
         # pre-process value
         if isinstance(value, str):
+            str_value = value
             # extract pitch class, modifiers, and octave
             match = MIDIPitch.name_regex.match(value)
             if match is None:
@@ -473,14 +546,22 @@ class MIDIPitch(Pitch):
             else:
                 value -= len(match['modifiers'])
             # add octave
-            value += 12 * (int(match['octave']) + 1)
+            if match['octave'] == "":
+                if not is_pitch_class:
+                    raise ValueError(f"Inconsistent arguments: {str_value} indicates a pitch class but "
+                                     f"'is_pitch_class' is {is_pitch_class}")
+            else:
+                if is_pitch_class:
+                    raise ValueError(f"Inconsistent arguments: {str_value} does not indicate a pitch class but "
+                                     f"'is_pitch_class' is {is_pitch_class}")
+                value += 12 * (int(match['octave']) + 1)
         elif isinstance(value, numbers.Number) and expect_int:
             int_value = int(value)
             if int_value != value:
                 raise ValueError(f"Expected integer pitch value but got {value}")
             value = int_value
         # hand on initialisation to other base classes
-        super().__init__(value=value, *args, **kwargs)
+        super().__init__(value=value, is_pitch_class=is_pitch_class, *args, **kwargs)
         # finish initialisation
         self.part = part
 
@@ -505,49 +586,17 @@ class MIDIPitch(Pitch):
             base_names = self._base_names_flat
         else:
             raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
-        return f"{base_names[self._value % 12]}{self.octave()}"
+        pc = base_names[self._value % 12]
+        if self.is_pitch_class():
+            return pc
+        else:
+            return pc + str(self.octave())
 
 
 @MIDIPitch.link_interval_class()
 class MIDIPitchInterval(Pitch.Interval):
     def __int__(self):
         return int(self._value)
-
-
-class MIDIPitchClass(MIDIPitch, PitchClass):
-
-    @staticmethod
-    def convert_from_MIDIPitch(midi_pitch):
-        return MIDIPitchClass(midi_pitch._value)
-
-    @staticmethod
-    def _octave():
-        return 12
-
-    def __init__(self, value, *args, **kwargs):
-        # add dummy octave to stings
-        if isinstance(value, str):
-            value = value + "0"
-        super().__init__(value=value, *args, **kwargs)
-
-    def name(self, sharp_flat=None):
-        if sharp_flat is None:
-            sharp_flat = "sharp"
-        if sharp_flat == "sharp":
-            base_names = self._base_names_sharp
-        elif sharp_flat == "flat":
-            base_names = self._base_names_flat
-        else:
-            raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
-        return f"{base_names[self._value]}"
-
-
-Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_MIDIPitch)
-
-
-@MIDIPitchClass.link_interval_class(overwrite_interval_class=True, overwrite_pitch_class=True)
-class MIDIPitchClassInterval(MIDIPitchInterval, PitchClass.PitchClassInterval):
-    pass
 
 
 class LogFreqPitch(Pitch):
@@ -558,6 +607,14 @@ class LogFreqPitch(Pitch):
     @staticmethod
     def convert_from_midi_pitch(midi_pitch):
         return LogFreqPitch(midi_pitch.freq(), is_freq=True)
+
+    @classmethod
+    def _pitch_class_origin(cls):
+        return np.log(1)
+
+    @classmethod
+    def _pitch_class_period(cls):
+        return np.log(2)
 
     def __init__(self, value, is_freq=False, *args, **kwargs):
         """
@@ -607,25 +664,6 @@ class LogFreqPitchInterval(Pitch.Interval):
 
     def __repr__(self):
         return f"{np.format_float_positional(self.ratio(), fractional=True, precision=3)}"
-
-
-class LogFreqPitchClass(LogFreqPitch, PitchClass):
-
-    @staticmethod
-    def convert_from_LogFreqPitch(log_freq_pitch):
-        return LogFreqPitchClass(log_freq_pitch._value)
-
-    @staticmethod
-    def _octave():
-        return np.log(2)
-
-
-Pitch.register_converter(LogFreqPitch, LogFreqPitchClass, LogFreqPitchClass.convert_from_LogFreqPitch)
-
-
-@LogFreqPitchClass.link_interval_class(overwrite_interval_class=True, overwrite_pitch_class=True)
-class LogFreqPitchClassInterval(LogFreqPitchInterval, PitchClass.PitchClassInterval):
-    pass
 
 
 class Event:

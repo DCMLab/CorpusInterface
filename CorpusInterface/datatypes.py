@@ -68,14 +68,18 @@ class Point:
             return self._point_class(self._value)
 
     @classmethod
-    def link_vector_class(point_class, *, force_overwrite=False):
+    def link_vector_class(point_class, *, overwrite_point_class=None, overwrite_vector_class=None):
         """
         Class decorator to link 'point_class' and the specified vector class by adding _vector_class and _point_class
         attribute, respectively. Raises an error if one of the classes already has the corresponding attribute, which
-        would be overwritten. Overwriting can be forced by setting force_overwrite=True. This is for instance needed
-        when linking a vector class to a point class that was derived from another point class, which already has an
-        associated vector class.
-        :param force_overwrite: ignore existing links
+        would be overwritten. Overwriting can be forced, which is for instance needed when linking a vector class to a
+        point class that was derived from another point class, which already has an associated vector class.
+        :param overwrite_point_class: if None (default), adds a point class to the vector class if is does not already
+        have one and raises an AttributeError otherwise; if False, never adds a point class to the vector class; if
+        True, always adds a point class to the vector class (possibly overwriting an existing one)
+        :param overwrite_vector_class: if None (default), adds a vector class to the point class if is does not already
+        have one and raises an AttributeError otherwise; if False, never adds a vector class to the point class; if
+        True, always adds a vector class to the point class (possibly overwriting an existing one)
         """
         def decorator(vector_class):
             """
@@ -86,16 +90,18 @@ class Point:
             if Point.Vector not in vector_class.__mro__:
                 raise TypeError(f"Provided class {vector_class} does not derive from {Point.Vector}")
             # check if point class already has an associated vector class
-            if hasattr(point_class, "_vector_class") and not force_overwrite:
+            if overwrite_vector_class is None and hasattr(point_class, "_vector_class"):
                 raise AttributeError(
                     f"Class '{point_class}' already has an associated vector class ({point_class._vector_class})")
             # check if vector class already has an associated point class
-            if hasattr(vector_class, "_point_class") and not force_overwrite:
+            if overwrite_point_class is None and hasattr(vector_class, "_point_class"):
                 raise AttributeError(
                     f"Class '{vector_class}' already has an associated point class ({vector_class._point_class})")
             # let the point class know its vector class and vice versa
-            point_class._vector_class = vector_class
-            vector_class._point_class = point_class
+            if overwrite_vector_class is None or overwrite_vector_class:
+                point_class._vector_class = vector_class
+            if overwrite_point_class is None or overwrite_point_class:
+                vector_class._point_class = point_class
             return vector_class
         return decorator
 
@@ -300,13 +306,15 @@ class Pitch(Point):
                 raise NotImplementedError(f"There are no converters registered for type '{cls}'")
 
     @classmethod
-    def link_interval_class(pitch_class, *, force_overwrite=False):
+    def link_interval_class(pitch_class, *, overwrite_pitch_class=None, overwrite_interval_class=None):
         def decorator(interval_class):
             # check that provided class is actually derived from Interval
             if Pitch.Interval not in interval_class.__mro__:
                 raise TypeError(f"Provided class {interval_class} does not derive from {Pitch.Interval}")
             # execute Point decorator
-            interval_class = pitch_class.link_vector_class(force_overwrite=force_overwrite)(interval_class)
+            interval_class = pitch_class.link_vector_class(
+                overwrite_point_class=overwrite_pitch_class,
+                overwrite_vector_class=overwrite_interval_class)(interval_class)
             # add renamed versions
             pitch_class._interval_class = pitch_class._vector_class
             interval_class._pitch_class = interval_class._point_class
@@ -357,6 +365,7 @@ class PitchClass(Pitch):
 
         def phase_diff(self):
             return self._value / self._pitch_class._octave()
+
     def __init__(self, value, *args, **kwargs):
         super().__init__(value=value, *args, **kwargs)
         self._value = self._map_down(self._value)
@@ -403,13 +412,15 @@ class Time(Point):
             return self._time_class(self._value)
 
     @classmethod
-    def link_duration_class(time_class, *, force_overwrite=False):
+    def link_duration_class(time_class, *, overwrite_time_class=None, overwrite_duration_class=None):
         def decorator(duration_class):
             # check that provided class is actually derived from Duration
             if Time.Duration not in duration_class.__mro__:
                 raise TypeError(f"Provided class {duration_class} does not derive from {Time.Duration}")
             # execute Point decorator
-            duration_class = time_class.link_vector_class(force_overwrite=force_overwrite)(duration_class)
+            duration_class = time_class.link_vector_class(
+                overwrite_point_class=overwrite_time_class,
+                overwrite_vector_class=overwrite_duration_class)(duration_class)
             # add renamed versions
             time_class._duration_class = time_class._vector_class
             duration_class._time_class = duration_class._point_class
@@ -529,7 +540,7 @@ class MIDIPitchClass(MIDIPitch, PitchClass):
 Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_MIDIPitch)
 
 
-@MIDIPitchClass.link_interval_class(force_overwrite=True)
+@MIDIPitchClass.link_interval_class(overwrite_interval_class=True, overwrite_pitch_class=True)
 class MIDIPitchClassInterval(MIDIPitchInterval, PitchClass.PitchClassInterval):
     pass
 

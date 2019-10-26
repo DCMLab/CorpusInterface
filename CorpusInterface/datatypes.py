@@ -180,12 +180,6 @@ class Pitch(Point):
     class Interval(Point.Vector):
 
         @classmethod
-        def _assert_has_pitch_class(cls):
-            cls._assert_has_point_class()
-
-        @classmethod
-        def _assert_is_interval(cls, other):
-            cls._assert_is_vector(other)
 
         def __init__(self, value, *args, **kwargs):
             # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
@@ -194,13 +188,13 @@ class Pitch(Point):
             super().__init__(value=value, *args, **kwargs)
 
         def to_pitch(self):
-            self._assert_has_pitch_class()
-            return self._pitch_class(self._value)
+            self._assert_has_point_class()
+            return self._pitch_class(self._value, is_pitch_class=self.is_interval_class())
 
         def convert_to(self, other_type):
             """Attempts to convert intervals using the converters from the corresponding Pitch classes."""
-            self._assert_has_pitch_class()
-            other_type._assert_has_pitch_class()
+            self._assert_has_point_class()
+            other_type._assert_has_point_class()
             # convert interval-->equivalent pitch-->other pitch type-->equivalent interval
             other_interval = self.to_pitch().convert_to(other_type._pitch_class).to_interval()
             # but point<-->value (pitch<-->interval) conversion relies on an implicit origin;
@@ -405,14 +399,6 @@ class Time(Point):
     """
 
     class Duration(Point.Vector):
-
-        @classmethod
-        def _assert_has_time_class(cls):
-            cls._assert_has_point_class()
-
-        @classmethod
-        def _assert_is_duration(cls, other):
-            cls._assert_is_vector(other)
 
         def __init__(self, value, *args, **kwargs):
             # if value is derived from Time.Duration, try to convert to converter to this type and get the _value

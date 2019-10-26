@@ -368,8 +368,12 @@ class PitchClass(Pitch):
                 value = value - cls._pitch_class._octave()
             return value
 
-        def phase_diff(self):
-            return self._value / self._pitch_class._octave()
+        def phase_diff(self, two_pi=False):
+            normed_phase_diff = self._value / self._pitch_class._octave()
+            if two_pi:
+                return normed_phase_diff * 2 * np.pi
+            else:
+                return normed_phase_diff
 
     def __init__(self, value, *args, **kwargs):
         super().__init__(value=value, *args, **kwargs)
@@ -383,8 +387,12 @@ class PitchClass(Pitch):
     def _map_down(cls, value):
         return value % cls._octave()
 
-    def phase(self):
-        return self._value / self._octave()
+    def phase(self, two_pi=False):
+        normed_phase = self._value / self._octave()
+        if two_pi:
+            return normed_phase * 2 * np.pi
+        else:
+            return normed_phase
 
 
 class Time(Point):

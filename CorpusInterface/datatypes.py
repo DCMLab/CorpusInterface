@@ -520,7 +520,7 @@ class MIDIPitchClass(MIDIPitch):
             base_names = self._base_names_flat
         else:
             raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
-        return f"{base_names[self.pitch_class()]}"
+        return f"{base_names[self._value]}"
 
 
 Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_MIDIPitch)

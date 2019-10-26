@@ -328,13 +328,16 @@ class Pitch(Point):
         super().__init__(value=value, *args, **kwargs)
 
     def convert_to(self, other_type):
-        ret = self
-        for converter in self.__class__.get_converter(other_type):
-            ret = converter(ret)
-        # check for correct type
-        if not isinstance(ret, other_type):
-            raise TypeError(f"Conversion failed, expected type {other_type} but got {type(ret)}")
-        return ret
+        if other_type == self.__class__:
+            return self
+        else:
+            ret = self
+            for converter in self.__class__.get_converter(other_type):
+                ret = converter(ret)
+            # check for correct type
+            if not isinstance(ret, other_type):
+                raise TypeError(f"Conversion failed, expected type {other_type} but got {type(ret)}")
+            return ret
 
     def to_interval(self):
         return self.to_vector()

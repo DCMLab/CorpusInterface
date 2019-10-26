@@ -183,7 +183,7 @@ class Pitch(Point):
             # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
             if Pitch.Interval in value.__class__.__mro__:
                 value = value.convert_to(self.__class__)._value
-            super().__init__(value, *args, **kwargs)
+            super().__init__(value=value, *args, **kwargs)
 
         def to_pitch(self):
             self._assert_has_pitch_class()
@@ -317,7 +317,7 @@ class Pitch(Point):
         # if value is derived from Pitch, try to convert to converter to this type and get the _value
         if Pitch in value.__class__.__mro__:
             value = value.convert_to(self.__class__)._value
-        super().__init__(value, *args, **kwargs)
+        super().__init__(value=value, *args, **kwargs)
 
     def convert_to(self, other_type):
         ret = self
@@ -355,7 +355,7 @@ class Time(Point):
             # if value is derived from Time.Duration, try to convert to converter to this type and get the _value
             if Time.Duration in value.__class__.__mro__:
                 value = value.convert_to(self.__class__)._value
-            super().__init__(value, *args, **kwargs)
+            super().__init__(value=value, *args, **kwargs)
 
         def to_time(self):
             self._assert_has_time_class()
@@ -466,7 +466,7 @@ class MIDIPitchClass(MIDIPitch):
         return MIDIPitchClass(midi_pitch._value)
 
     def __init__(self, value, *args, **kwargs):
-        super().__init__(value, *args, **kwargs)
+        super().__init__(value=value, *args, **kwargs)
         self._value %= 12
 
     def name(self, sharp_flat=None):
@@ -488,7 +488,7 @@ Pitch.register_converter(MIDIPitch, MIDIPitchClass, MIDIPitchClass.convert_from_
 class MIDIPitchClassInterval(Pitch.Interval):
 
     def __init__(self, value, *args, **kwargs):
-        super().__init__(value, *args, **kwargs)
+        super().__init__(value=value, *args, **kwargs)
         self._value %= 12
         if self._value > 6:
             self._value -= 12

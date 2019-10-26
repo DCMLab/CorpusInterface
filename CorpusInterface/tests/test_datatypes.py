@@ -149,11 +149,35 @@ class TestMIDIPitch(TestCase):
 
     def test_arithmetics(self):
         c4 = MIDIPitch("C4")
+        d4 = MIDIPitch("D4")
         g4 = MIDIPitch("G4")
-        i = MIDIPitchInterval(-7)
-        self.assertEqual(c4 - g4, i)
-        self.assertEqual(i.convert_to(MIDIPitchClassInterval), MIDIPitchClassInterval(5))
-        self.assertEqual(i.convert_to(MIDIPitchClassInterval), MIDIPitchClassInterval(i))
+        icg = c4 - g4
+        idc = d4 - c4
+        self.assertEqual(icg, MIDIPitchInterval(-7))
+        self.assertEqual(idc, MIDIPitchInterval(2))
+
+        pc_c4 = c4.convert_to(MIDIPitchClass)
+        pc_d4 = d4.convert_to(MIDIPitchClass)
+        pc_g4 = g4.convert_to(MIDIPitchClass)
+        pci_cg = pc_c4 - pc_g4
+        pci_dc = pc_d4 - pc_c4
+
+        self.assertEqual(icg.convert_to(MIDIPitchClassInterval), MIDIPitchClassInterval(icg))
+
+        self.assertEqual(pci_cg, MIDIPitchClassInterval(5))
+        self.assertEqual(pci_cg, MIDIPitchClassInterval(-7))
+        self.assertEqual(int(pci_cg), 5)
+
+        self.assertEqual(pci_dc, MIDIPitchClassInterval(2))
+        self.assertEqual(pci_dc, MIDIPitchClassInterval(-10))
+        self.assertEqual(int(pci_dc), 2)
+
+        self.assertEqual(pc_c4.phase(), 0)
+        self.assertEqual(pc_g4.phase(), 7 / 12)
+        self.assertEqual(pc_d4.phase(), 2 / 12)
+
+        self.assertEqual(pci_cg.phase_diff(), 5 / 12)
+        self.assertEqual(pci_dc.phase_diff(), 2 / 12)
 
 
 class TestConverters(TestCase):

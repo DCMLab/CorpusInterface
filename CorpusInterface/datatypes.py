@@ -219,11 +219,16 @@ class Pitch(Point):
                 value -= cls._pitch_class._pitch_class_period()
             return value
 
-        def __init__(self, value, *args, is_interval_class=False, **kwargs):
+        def __init__(self, value, *args, is_interval_class=None, **kwargs):
             # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
+            value_is_interval_class = None
             if Pitch.Interval in value.__class__.__mro__:
+                value_is_interval_class = value.is_interval_class()
                 value = value.convert_to(self.__class__)._value
             super().__init__(value=value, *args, **kwargs)
+            # check consistency for class parameter
+            is_interval_class = Pitch._check_class_param_consistency(is_interval_class, value_is_interval_class)
+            # set interval class and return
             if is_interval_class:
                 self._value = self._map_to_interval_class(self._value)
                 self._is_interval_class = True
@@ -464,11 +469,16 @@ class Pitch(Point):
     def _pitch_class_period(cls):
         raise NotImplementedError
 
-    def __init__(self, value, *args, is_pitch_class=False, **kwargs):
+    def __init__(self, value, *args, is_pitch_class=None, **kwargs):
         # if value is derived from Pitch, try to convert to converter to this type and get the _value
+        value_is_pitch_class = None
         if Pitch in value.__class__.__mro__:
+            value_is_pitch_class = value.is_pitch_class()
             value = value.convert_to(self.__class__)._value
         super().__init__(value=value, *args, **kwargs)
+        # check consistency for class parameter
+        is_pitch_class = Pitch._check_class_param_consistency(is_pitch_class, value_is_pitch_class)
+        # set pitch class and return
         if is_pitch_class:
             self._value = self._map_to_pitch_class(self._value)
             self._is_pitch_class = True

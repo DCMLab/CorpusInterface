@@ -183,6 +183,33 @@ class Pitch(Point):
         Point.Vector --> Pitch.Interval
     """
 
+    @staticmethod
+    def _check_class_param_consistency(param_value, object_value):
+        """
+        Check consistency between the two values and set default
+        :param param_value: value specified via parameter
+        :param object_value: value obtained from object
+        :return:
+              param_value:  | None  | True  | False
+        --------------------------------------------
+        object value: None  | False | True  | False
+        object value: True  | True  | True  | ERROR
+        object value: False | False | ERROR | False
+        """
+        if param_value is None and object_value is None:
+            return False
+        elif param_value is None:
+            return object_value
+        elif object_value is None:
+            return param_value
+        else:
+            if object_value == param_value:
+                return param_value
+            else:
+                raise ValueError(f"Inconsistent values for class parameter between "
+                                 f"provided object has ({object_value}) and "
+                                 f"parameter specification ({param_value})")
+
     class Interval(Point.Vector):
 
         @classmethod

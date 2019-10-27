@@ -219,6 +219,10 @@ class Pitch(Point):
                 value -= cls._pitch_class._pitch_class_period()
             return value
 
+        @classmethod
+        def period(cls):
+            return cls._pitch_class.period()
+
         def __init__(self, value, *args, is_interval_class=None, **kwargs):
             # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
             value_is_interval_class = None
@@ -468,6 +472,17 @@ class Pitch(Point):
     @classmethod
     def _pitch_class_period(cls):
         raise NotImplementedError
+
+    @classmethod
+    def origin(cls):
+        """Returns the origin with respect to which pitch classes are computed as pitch object"""
+        return cls.__class__(cls._pitch_class_origin())
+
+    @classmethod
+    def period(cls):
+        """Returns the perior used to compute pitch classes as interval object"""
+        cls._assert_has_vector_class()
+        return cls._interval_class(cls._pitch_class_period())
 
     def __init__(self, value, *args, is_pitch_class=None, **kwargs):
         # if value is derived from Pitch, try to convert to converter to this type and get the _value

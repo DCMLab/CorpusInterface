@@ -662,7 +662,7 @@ class LogFreqPitch(Pitch):
 
     @staticmethod
     def convert_from_midi_pitch(midi_pitch):
-        return LogFreqPitch(midi_pitch.freq(), is_freq=True)
+        return LogFreqPitch(midi_pitch.freq(), is_freq=True, is_pitch_class=midi_pitch.is_pitch_class())
 
     @classmethod
     def _pitch_class_origin(cls):

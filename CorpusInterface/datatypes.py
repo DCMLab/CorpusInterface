@@ -370,6 +370,25 @@ class Pitch(Point):
             return interval_class
         return decorator
 
+    @staticmethod
+    def _check_type(value, types=(), bases=(), value_is_type=False):
+        # check for type
+        if value_is_type:
+            # type was given
+            if value in types:
+                return True
+        else:
+            # value was given
+            if isinstance(value, types):
+                return True
+        # check for base classes
+        for b in bases:
+            if (value_is_type and b in value.__mro__) or (not value_is_type and b in value.__class__.__mro__):
+                return True
+        raise TypeError(f"argument should be of type [{', '.join([str(t) for t in types])}] "
+                        f"or derived from [{', '.join([str(b) for b in bases])}]; "
+                        f"got {value} of type {type(value)}")
+
     @classmethod
     def _map_to_pitch_class(cls, value):
         return (value - cls._pitch_class_origin()) % cls._pitch_class_period()
@@ -533,6 +552,7 @@ class MIDIPitch(Pitch):
         return 12
 
     def __init__(self, value, *args, is_pitch_class=False, part=None, expect_int=True, **kwargs):
+        Pitch._check_type(value, (str, numbers.Number), (Pitch,))
         # pre-process value
         if isinstance(value, str):
             str_value = value
@@ -598,6 +618,11 @@ class MIDIPitch(Pitch):
 
 @MIDIPitch.link_interval_class()
 class MIDIPitchInterval(Pitch.Interval):
+
+    def __init__(self, value, *args, **kwargs):
+        Pitch._check_type(value, (numbers.Number,), (Pitch.Interval,))
+        super().__init__(value=value, *args, **kwargs)
+
     def __int__(self):
         return int(self._value)
 
@@ -625,6 +650,7 @@ class LogFreqPitch(Pitch):
         :param value: frequency or log-frequency (default) value
         :param is_freq: whether value is frequency or log-frequency
         """
+        Pitch._check_type(value, (numbers.Number,))
         if is_freq:
             value = np.log(value)
         super().__init__(value=value, *args, **kwargs)
@@ -655,6 +681,7 @@ class LogFreqPitchInterval(Pitch.Interval):
         :param value: frequency ratio or log-frequency difference (default)
         :param is_freq_ratio: whether value is a frequency ratio or log-frequency difference
         """
+        Pitch._check_type(value, (numbers.Number,), (Pitch.Interval,))
         if is_freq_ratio:
             value = np.log(value)
         super().__init__(value=value, *args, **kwargs)

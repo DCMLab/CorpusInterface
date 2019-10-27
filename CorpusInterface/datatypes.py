@@ -295,7 +295,7 @@ class Pitch(Point):
         # get existing converters from from_type to to_type and decide whether to set new converter
         set_new_converter = False
         try:
-            converter = from_type.get_converter(to_type)
+            converter = Pitch.get_converter(from_type, to_type)
         except NotImplementedError:
             # no existing converters
             set_new_converter = True
@@ -324,7 +324,7 @@ class Pitch(Point):
                     # trying to prepend this converter [from_type --> to_type == another_from_type --> another_to_type]
                     if to_type == another_from_type:
                         # get existing converters from_type --> ???
-                        converters = from_type.get_converter()
+                        converters = Pitch.get_converter(from_type)
                         # add the extended converter if one does not exist
                         if another_to_type not in converters:
                             converters[another_to_type] = [conv_func] + converter_pipeline
@@ -338,21 +338,21 @@ class Pitch(Point):
                 for key, val in new_converters:
                     other_converters[key] = val
 
-    @classmethod
-    def get_converter(cls, other_type=None):
+    @staticmethod
+    def get_converter(from_type, to_type=None):
         # return dedicated converter if other_type was specified or list of existing converters otherwise
-        if other_type is not None:
-            all_converters = cls.get_converter()
+        if to_type is not None:
+            all_converters = Pitch.get_converter(from_type)
             try:
-                return all_converters[other_type]
+                return all_converters[to_type]
             except KeyError:
-                raise NotImplementedError(f"Type '{cls}' does not have any converter registered for type "
-                                          f"'{other_type}'")
+                raise NotImplementedError(f"Type '{from_type}' does not have any converter registered for type "
+                                          f"'{to_type}'")
         else:
             try:
-                return Pitch.__converters__[cls]
+                return Pitch._converters_[from_type]
             except KeyError:
-                raise NotImplementedError(f"There are no converters registered for type '{cls}'")
+                raise NotImplementedError(f"There are no converters registered for type '{from_type}'")
 
     @classmethod
     def link_interval_class(pitch_class, *, overwrite_pitch_class=None, overwrite_interval_class=None):

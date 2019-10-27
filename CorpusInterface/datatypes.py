@@ -62,6 +62,9 @@ class Point:
         def __rmul__(self, other):
             return self.__mul__(other)
 
+        def __truediv__(self, other):
+            return self.__class__(self.__mul__(1 / other))
+
         def __abs__(self):
             return abs(self._value)
 

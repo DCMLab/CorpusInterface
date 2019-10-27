@@ -551,7 +551,7 @@ class MIDIPitch(Pitch):
     def _pitch_class_period(cls):
         return 12
 
-    def __init__(self, value, *args, is_pitch_class=False, part=None, expect_int=True, **kwargs):
+    def __init__(self, value, *args, is_pitch_class=None, part=None, expect_int=True, **kwargs):
         Pitch._check_type(value, (str, numbers.Number), (Pitch,))
         # pre-process value
         if isinstance(value, str):
@@ -570,13 +570,19 @@ class MIDIPitch(Pitch):
                 value -= len(match['modifiers'])
             # add octave
             if match['octave'] == "":
-                if not is_pitch_class:
-                    raise ValueError(f"Inconsistent arguments: {str_value} indicates a pitch class but "
-                                     f"'is_pitch_class' is {is_pitch_class}")
+                if is_pitch_class is None:
+                    is_pitch_class = True
+                else:
+                    if not is_pitch_class:
+                        raise ValueError(f"Inconsistent arguments: {str_value} indicates a pitch class but "
+                                         f"'is_pitch_class' is {is_pitch_class}")
             else:
-                if is_pitch_class:
-                    raise ValueError(f"Inconsistent arguments: {str_value} does not indicate a pitch class but "
-                                     f"'is_pitch_class' is {is_pitch_class}")
+                if is_pitch_class is None:
+                    is_pitch_class = False
+                else:
+                    if is_pitch_class:
+                        raise ValueError(f"Inconsistent arguments: {str_value} does not indicate a pitch class but "
+                                         f"'is_pitch_class' is {is_pitch_class}")
                 value += 12 * (int(match['octave']) + 1)
         elif isinstance(value, numbers.Number) and expect_int:
             int_value = int(value)

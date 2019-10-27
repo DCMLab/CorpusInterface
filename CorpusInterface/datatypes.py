@@ -359,6 +359,34 @@ class Pitch(Point):
             except KeyError:
                 raise NotImplementedError(f"There are no converters registered for type '{from_type}'")
 
+    @staticmethod
+    def _convert(value, to_type):
+        Pitch._check_type(value, bases=(Pitch, Pitch.Interval))
+        Pitch._check_type(to_type, bases=(Pitch, Pitch.Interval), value_is_type=True)
+        if to_type == value.__class__:
+            # skip self-conversion
+            return value
+        else:
+            # use conversion pipeline
+            ret = value
+            for converter in Pitch.get_converter(value.__class__, to_type):
+                ret = converter(ret)
+            # check for correct type
+            if not isinstance(ret, to_type):
+                raise TypeError(f"Conversion failed, expected type {to_type} but got {type(ret)}")
+            if Pitch in value.__class__.__mro__:
+                if not value.is_pitch_class() == ret.is_pitch_class():
+                    raise TypeError(f"Conversion failed, inconsistent pitch class attribute "
+                                    f"(before: {value.is_pitch_class()}, after: {ret._is_pitch_class})")
+                else:
+                    return ret if not value.is_pitch_class() else ret.to_pitch_class()
+            elif Pitch.Interval in value.__class__.__mro__:
+                if not value.is_interval_class() == ret.is_interval_class():
+                    raise TypeError(f"Conversion failed, inconsistent interval class attribute "
+                                    f"(before: {value.is_interval_class()}, after: {ret._is_interval_class})")
+                else:
+                    return ret if not value.is_interval_class() else ret.to_interval_class()
+
     @classmethod
     def link_interval_class(pitch_class, *, overwrite_pitch_class=None, overwrite_interval_class=None):
         def decorator(interval_class):
@@ -461,19 +489,8 @@ class Pitch(Point):
                 return normed_phase
 
     def convert_to(self, other_type):
-        if other_type == self.__class__:
-            return self
-        else:
-            ret = self
-            for converter in self.__class__.get_converter(other_type):
-                ret = converter(ret)
-            # check for correct type
-            if not isinstance(ret, other_type):
-                raise TypeError(f"Conversion failed, expected type {other_type} but got {type(ret)}")
-            if not self.is_pitch_class() == ret._is_pitch_class:
-                raise TypeError(f"Conversion failed, inconsistent pitch class attribute "
-                                f"(before: {self.is_pitch_class()}, after: {ret._is_pitch_class})")
-            return ret if not self.is_pitch_class() else ret.to_pitch_class()
+        Pitch._check_type(other_type, bases=(Pitch,), value_is_type=True)
+        return Pitch._convert(self, other_type)
 
     def to_interval(self):
         self._assert_has_vector_class()

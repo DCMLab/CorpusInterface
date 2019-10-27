@@ -62,6 +62,9 @@ class Point:
         def __rmul__(self, other):
             return self.__mul__(other)
 
+        def __abs__(self):
+            return abs(self._value)
+
         def __eq__(self, other):
             return isinstance(other, self.__class__) and self._value == other._value
 

@@ -267,7 +267,7 @@ class Pitch(Point):
     # store converters for classes derived from Pitch;
     # it's a dict of dicts, so that __converters__[A][B] returns is a list of functions that, when executed
     # successively, converts A to B
-    __converters__ = {}
+    _converters_ = {}
 
     @staticmethod
     def register_converter(from_type, to_type, conv_func,
@@ -290,8 +290,8 @@ class Pitch(Point):
         other_type, it will not be overwritten
         """
         # initialise converter dict if it does not exist
-        if from_type not in Pitch.__converters__:
-            Pitch.__converters__[from_type] = {}
+        if from_type not in Pitch._converters_:
+            Pitch._converters_[from_type] = {}
         # get existing converters from from_type to to_type and decide whether to set new converter
         set_new_converter = False
         try:
@@ -314,10 +314,10 @@ class Pitch(Point):
                     set_new_converter = True
         # set the new converter
         if set_new_converter:
-            Pitch.__converters__[from_type][to_type] = [conv_func]
+            Pitch._converters_[from_type][to_type] = [conv_func]
         # extend implicit converters
         if extend_implicit_converters:
-            for another_from_type, other_converters in Pitch.__converters__.items():
+            for another_from_type, other_converters in Pitch._converters_.items():
                 # remember new converters to not change dict while iterating over it
                 new_converters = []
                 for another_to_type, converter_pipeline in other_converters.items():

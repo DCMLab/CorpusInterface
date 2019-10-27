@@ -245,24 +245,29 @@ class Pitch(Point):
             return self._pitch_class(self._value, is_pitch_class=self.is_interval_class())
 
         def convert_to(self, other_type):
-            """Attempts to convert intervals using the converters from the corresponding Pitch classes."""
-            self._assert_has_point_class()
-            other_type._assert_has_point_class()
-            # convert interval-->equivalent pitch-->other pitch type-->equivalent interval
-            other_interval = self.to_pitch().convert_to(other_type._pitch_class).to_interval()
-            # but point<-->value (pitch<-->interval) conversion relies on an implicit origin;
-            # if the two origins of the two different pitch classes are not identical,
-            # we are off by the corresponding difference;
-            # the origin can be retrieved as the equivalent point of the zero vector
-            origin_from = (self - self).to_pitch().convert_to(other_type._pitch_class) # point
-            origin_to = (other_interval - other_interval).to_pitch() # point
-            origin_difference = origin_to - origin_from # vector
-            # now we add that difference (we move from the "from" origin to the "to" origin)
-            out = other_interval + origin_difference
-            # check for correct type
-            if not isinstance(out, other_type):
-                raise TypeError(f"Conversion failed, expected type {other_type} but got {type(out)}")
-            return out if not self.is_interval_class() else out.to_interval_class()
+            Pitch._check_type(other_type, bases=(Pitch.Interval,), value_is_type=True)
+            try:
+                # try direct converter
+                return Pitch._convert(self, other_type)
+            except NotImplementedError:
+                # try to convert via equivalent pitch classes
+                self._assert_has_point_class()
+                other_type._assert_has_point_class()
+                # convert interval-->equivalent pitch-->other pitch type-->equivalent interval
+                other_interval = self.to_pitch().convert_to(other_type._pitch_class).to_interval()
+                # but point<-->value (pitch<-->interval) conversion relies on an implicit origin;
+                # if the two origins of the two different pitch classes are not identical,
+                # we are off by the corresponding difference;
+                # the origin can be retrieved as the equivalent point of the zero vector
+                origin_from = (self - self).to_pitch().convert_to(other_type._pitch_class) # point
+                origin_to = (other_interval - other_interval).to_pitch() # point
+                origin_difference = origin_to - origin_from # vector
+                # now we add that difference (we move from the "from" origin to the "to" origin)
+                out = other_interval + origin_difference
+                # check for correct type
+                if not isinstance(out, other_type):
+                    raise TypeError(f"Conversion failed, expected type {other_type} but got {type(out)}")
+                return out if not self.is_interval_class() else out.to_interval_class()
 
     # store converters for classes derived from Pitch;
     # it's a dict of dicts, so that __converters__[A][B] returns is a list of functions that, when executed

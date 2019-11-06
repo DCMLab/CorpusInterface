@@ -190,6 +190,22 @@ class TestMIDIPitch(TestCase):
         self.assertEqual(pci_cg.phase_diff(), 5 / 12)
         self.assertEqual(pci_dc.phase_diff(), 2 / 12)
 
+    def test_range(self):
+        p1 = MIDIPitch("C4")
+        p2 = MIDIPitch("C5")
+        i1 = MIDIPitch("C#4") - MIDIPitch("C4")
+        i2 = MIDIPitch("D4") - MIDIPitch("C4")
+
+        self.assertEqual([int(p) for p in p1.range_to(p2)], list(range(60, 72)))
+        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i1)], list(range(60, 72)))
+        self.assertEqual([int(p) for p in p1.range_to(p2, i2)], list(range(60, 72, 2)))
+        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i2)], list(range(60, 72, 2)))
+
+        self.assertEqual([int(p) for p in p1.range_to(p2, include_stop=True)], list(range(60, 73)))
+        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i1, include_stop=True)], list(range(60, 73)))
+        self.assertEqual([int(p) for p in p1.range_to(p2, i2, include_stop=True)], list(range(60, 73, 2)))
+        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i2, include_stop=True)], list(range(60, 73, 2)))
+
 
 class TestLogFreqPitch(TestCase):
 

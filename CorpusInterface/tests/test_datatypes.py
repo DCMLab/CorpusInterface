@@ -173,7 +173,7 @@ class TestMIDIPitch(TestCase):
         pci_cg = pc_c4 - pc_g4
         pci_dc = pc_d4 - pc_c4
 
-        self.assertEqual(icg.to_interval_class(), MIDIPitchInterval(icg, is_interval_class=True))
+        self.assertEqual(icg.to_interval_class(), MIDIPitchInterval(icg._value, is_interval_class=True))
 
         self.assertEqual(pci_cg, MIDIPitchInterval(5, is_interval_class=True))
         self.assertEqual(pci_cg, MIDIPitchInterval(-7, is_interval_class=True))

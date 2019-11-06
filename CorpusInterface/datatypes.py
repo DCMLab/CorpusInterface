@@ -1,8 +1,10 @@
 import re
 import numpy as np
 import numbers
+from functools import total_ordering
 
 
+@total_ordering
 class Point:
     """
     Base class for objects describing a point in a space. Examples would be a pitch, a point in time, or a point in
@@ -11,6 +13,8 @@ class Point:
     operations (see Vector class). Otherwise, the abstract Point class is just a wrapper around some value. The
     semantics of this value and any extended functionality is defined via the derived classes.
     """
+
+    @total_ordering
     class Vector:
         """
         Base class for objects describing direction and magnitude in a space. A class derived from Vector should have an
@@ -69,7 +73,19 @@ class Point:
             return abs(self._value)
 
         def __eq__(self, other):
-            return isinstance(other, self.__class__) and self._value == other._value
+            if not isinstance(other, self.__class__):
+                return NotImplemented
+            else:
+                return self._value == other._value
+
+        def __hash__(self):
+            return hash(self._value)
+
+        def __lt__(self, other):
+            if not isinstance(other, self.__class__):
+                return NotImplemented
+            else:
+                return self._value < other._value
 
         def to_point(self):
             self._assert_has_point_class()
@@ -166,7 +182,19 @@ class Point:
         return self.__class__(self._vector_add(self._value, other._value))
 
     def __eq__(self, other):
-        return isinstance(other, self.__class__) and self._value == other._value
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        else:
+            return self._value == other._value
+
+    def __hash__(self):
+        return hash(self._value)
+
+    def __lt__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        else:
+            return self._value < other._value
 
     def to_vector(self):
         self._assert_has_vector_class()

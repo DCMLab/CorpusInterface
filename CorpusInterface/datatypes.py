@@ -734,6 +734,23 @@ class MIDIPitch(Pitch):
     def freq(self):
         return 2 ** ((self._value - 69) / 12) * 440
 
+    def fifth_steps(self, sharp_flat=None):
+        pitch_class = int(self.to_pitch_class())
+        if pitch_class % 2 == 0:
+            fifth_steps = pitch_class
+        else:
+            fifth_steps = (pitch_class + 6) % 12
+        if sharp_flat is None:
+            if fifth_steps > 6:
+                fifth_steps -= 12
+        elif sharp_flat == "sharp":
+            pass
+        elif sharp_flat == "flat":
+            fifth_steps %= -12
+        else:
+            raise ValueError(f"parameter 'sharp_flat' must be on of {['sharp', 'flat', None]}")
+        return fifth_steps
+
     def name(self, sharp_flat=None):
         if sharp_flat is None:
             sharp_flat = "sharp"

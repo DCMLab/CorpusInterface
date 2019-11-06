@@ -512,6 +512,27 @@ class Pitch(Point):
         cls._assert_has_vector_class()
         return cls._interval_class(cls._pitch_class_period())
 
+    @classmethod
+    def range(cls, start, stop, step=None, *, include_stop=False):
+        # start
+        start = cls(start)
+        if not isinstance(start, cls):
+            raise TypeError(f"Start value has to be of type {cls} but is {type(start)}")
+        # stop
+        stop = cls(stop)
+        if not isinstance(stop, cls):
+            raise TypeError(f"Stop value has to be of type {cls} but is {type(stop)}")
+        # step
+        if step is None:
+            step = cls._interval_class(1)
+        else:
+            cls._interval_class(step)
+        if not isinstance(step, cls._interval_class):
+            raise TypeError(f"Step value has to be of type {cls._interval_class} but is {type(step)}")
+        # yield from range created in value type
+        for val in range(start._value, (stop._value + step._value if include_stop else stop._value), step._value):
+            yield cls(val)
+
     def __init__(self, value, *args, is_pitch_class=None, **kwargs):
         # if value is derived from Pitch, try to convert to converter to this type and get the _value
         value_is_pitch_class = None
@@ -560,6 +581,9 @@ class Pitch(Point):
 
     def to_pitch_class(self):
         return self.__class__(value=self._value, is_pitch_class=True)
+
+    def range_to(self, stop, step=None, *, include_stop=False):
+        yield from self.range(start=self, stop=stop, step=step, include_stop=include_stop)
 
     def phase(self, two_pi=False):
         if not self.is_pitch_class():

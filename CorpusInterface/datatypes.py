@@ -646,15 +646,9 @@ class Time(Point):
 
 
 class LinearTime(Time):
-    """
-    Class for "normal" time types that have a total order
-    """
 
-    def __lt__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        else:
-            return self._value < other._value
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(value=float(value), *args, **kwargs)
 
     def __float__(self):
         return float(self._value)
@@ -662,7 +656,12 @@ class LinearTime(Time):
 
 @LinearTime.link_duration_class()
 class LinearTimeDuration(Time.Duration):
-    pass
+
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(value=float(value), *args, **kwargs)
+
+    def __float__(self):
+        return float(self._value)
 
 
 class MIDIPitch(Pitch):

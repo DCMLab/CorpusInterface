@@ -235,7 +235,7 @@ class Pitch(Point):
                 return param_value
             else:
                 raise ValueError(f"Inconsistent values for class parameter between "
-                                 f"provided object has ({object_value}) and "
+                                 f"provided object ({object_value}) and "
                                  f"parameter specification ({param_value})")
 
     class Interval(Point.Vector):

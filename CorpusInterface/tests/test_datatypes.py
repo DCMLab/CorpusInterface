@@ -183,9 +183,9 @@ class TestMIDIPitch(TestCase):
         self.assertEqual(pci_dc, MIDIPitchInterval(-10, is_interval_class=True))
         self.assertEqual(int(pci_dc), 2)
 
-        self.assertEqual(pc_c4.phase(), 0)
-        self.assertEqual(pc_g4.phase(), 7 / 12)
-        self.assertEqual(pc_d4.phase(), 2 / 12)
+        self.assertEqual(pc_c4.pitch_class_phase(), 0)
+        self.assertEqual(pc_g4.pitch_class_phase(), 7 / 12)
+        self.assertEqual(pc_d4.pitch_class_phase(), 2 / 12)
 
         self.assertEqual(pci_cg.phase_diff(), 5 / 12)
         self.assertEqual(pci_dc.phase_diff(), 2 / 12)
@@ -245,22 +245,22 @@ class TestConverters(TestCase):
             @staticmethod
             def convert_to_PitchA(pitch_b):
                 return PitchA(int(pitch_b._value))
-            @staticmethod
-            def _point_sub(p1, p2):
-                return int(p1) - int(p2)
             def __init__(self, value, *args, **kwargs):
                 super().__init__(str(value), *args, **kwargs)
-            def to_vector(self):
+            def __sub__(self, other):
+                self._assert_has_vector_class()
+                try:
+                    self._assert_is_point(other)
+                    return self._vector_class(int(self._value) - int(other._value))
+                except TypeError:
+                    self._assert_is_vector(other)
+                    return self.__class__(int(self._value) - int(other._value))
+            def to_interval(self):
                 return self._vector_class(int(self._value))
         Pitch.register_converter(PitchB, PitchA, PitchB.convert_to_PitchA)
         @PitchB.link_interval_class()
         class PitchBInterval(Pitch.Interval):
-            @staticmethod
-            def _vector_sub(vec1, vec2):
-                return str(int(vec1) - int(vec2))
-            @staticmethod
-            def _vector_add(vec1, vec2):
-                return str(int(vec1) + int(vec2))
+            pass
 
         # instantiate objects and check (in)equality and conversion)
         a = PitchA(5)
@@ -278,23 +278,23 @@ class TestConverters(TestCase):
             @staticmethod
             def convert_to_PitchB(pitch_c):
                 return PitchB(str(len(pitch_c._value)))
-            @staticmethod
-            def _point_sub(p1, p2):
-                return [0] * (len(p1) - len(p2))
             def __init__(self, value, *args, **kwargs):
                 if isinstance(value, int):
                     value = [0] * value
                 super().__init__(value, *args, **kwargs)
-            def to_vector(self):
+            def __sub__(self, other):
+                self._assert_has_vector_class()
+                try:
+                    self._assert_is_point(other)
+                    return self._vector_class(len(self._value) - len(other._value))
+                except TypeError:
+                    self._assert_is_vector(other)
+                    return self.__class__([0] * (len(self._value) - len(other._value)))
+            def to_interval(self):
                 return self._vector_class(len(self._value))
         @PitchC.link_interval_class()
         class PitchCInterval(Pitch.Interval):
-            @staticmethod
-            def _vector_sub(vec1, vec2):
-                return [0] * (len(vec1) - len(vec2))
-            @staticmethod
-            def _vector_add(vec1, vec2):
-                return [0] * (len(vec1) + len(vec2))
+            pass
 
         # instantiate object and check (in)equality
         c = PitchC([0, 0, 0, 0, 0])

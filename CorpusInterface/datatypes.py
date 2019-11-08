@@ -188,6 +188,8 @@ class Pitch(Point):
     """
 
     _interval_class = None
+    _pitch_class_origin = None
+    _pitch_class_period = None
 
     @staticmethod
     def _check_class_param_consistency(param_value, object_value):
@@ -222,14 +224,10 @@ class Pitch(Point):
 
         @classmethod
         def _map_to_interval_class(cls, value):
-            value %= cls._pitch_class._pitch_class_period()
-            if value > cls._pitch_class._pitch_class_period() / 2:
-                value -= cls._pitch_class._pitch_class_period()
+            value %= cls._pitch_class._pitch_class_period
+            if value > cls._pitch_class._pitch_class_period / 2:
+                value -= cls._pitch_class._pitch_class_period
             return value
-
-        @classmethod
-        def period(cls):
-            return cls._pitch_class.period()
 
         def __init__(self, value, *args, is_interval_class=None, **kwargs):
             # if value is derived from Pitch.Interval, try to convert to converter to this type and get the _value
@@ -281,7 +279,7 @@ class Pitch(Point):
             if not self.is_interval_class():
                 return self.to_interval_class().phase_diff(two_pi=two_pi)
             else:
-                normed_phase_diff = self._value / self._pitch_class._pitch_class_period()
+                normed_phase_diff = self._value / self._pitch_class._pitch_class_period
                 if two_pi:
                     return normed_phase_diff * 2 * np.pi
                 else:
@@ -471,26 +469,27 @@ class Pitch(Point):
 
     @classmethod
     def _map_to_pitch_class(cls, value):
-        return (value - cls._pitch_class_origin()) % cls._pitch_class_period()
+        if cls._pitch_class_origin is None or cls._pitch_class_period is None:
+            raise NotImplementedError
+        else:
+            return (value - cls._pitch_class_origin) % cls._pitch_class_period
 
     @classmethod
-    def _pitch_class_origin(cls):
-        raise NotImplementedError
-
-    @classmethod
-    def _pitch_class_period(cls):
-        raise NotImplementedError
-
-    @classmethod
-    def origin(cls):
+    def pitch_class_origin(cls):
         """Returns the origin with respect to which pitch classes are computed as pitch object"""
-        return cls.__class__(cls._pitch_class_origin())
+        if cls._pitch_class_origin is None:
+            raise NotImplementedError
+        else:
+            return cls.__class__(cls._pitch_class_origin)
 
     @classmethod
-    def period(cls):
+    def pitch_class_period(cls):
         """Returns the perior used to compute pitch classes as interval object"""
-        cls._assert_has_vector_class()
-        return cls._interval_class(cls._pitch_class_period())
+        if cls._pitch_class_period is None:
+            raise NotImplementedError
+        else:
+            cls._assert_has_vector_class()
+            return cls._interval_class(cls._pitch_class_period)
 
     @classmethod
     def range(cls, start, stop, step=None, *, include_stop=False):
@@ -565,11 +564,11 @@ class Pitch(Point):
     def range_to(self, stop, step=None, *, include_stop=False):
         yield from self.range(start=self, stop=stop, step=step, include_stop=include_stop)
 
-    def phase(self, two_pi=False):
+    def pitch_class_phase(self, two_pi=False):
         if not self.is_pitch_class():
-            return self.to_pitch_class().phase(two_pi=two_pi)
+            return self.to_pitch_class().pitch_class_phase(two_pi=two_pi)
         else:
-            normed_phase = self._value / self._pitch_class_period()
+            normed_phase = self._value / self._pitch_class_period
             if two_pi:
                 return normed_phase * 2 * np.pi
             else:
@@ -655,13 +654,8 @@ class MIDIPitch(Pitch):
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
     name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>(-?[0-9]+)?)$")
 
-    @classmethod
-    def _pitch_class_origin(cls):
-        return 60
-
-    @classmethod
-    def _pitch_class_period(cls):
-        return 12
+    _pitch_class_origin = 60
+    _pitch_class_period = 12
 
     def __init__(self, value, *args, is_pitch_class=None, part=None, expect_int=True, **kwargs):
         Pitch._check_type(value, (str, numbers.Number), (Pitch,))
@@ -767,17 +761,12 @@ class LogFreqPitch(Pitch):
     Represents a pitch in continuous frequency space with the frequency value stored in log representation.
     """
 
+    _pitch_class_origin = np.log(1)
+    _pitch_class_period = np.log(2)
+
     @staticmethod
     def convert_from_midi_pitch(midi_pitch):
         return LogFreqPitch(midi_pitch.freq(), is_freq=True, is_pitch_class=midi_pitch.is_pitch_class())
-
-    @classmethod
-    def _pitch_class_origin(cls):
-        return np.log(1)
-
-    @classmethod
-    def _pitch_class_period(cls):
-        return np.log(2)
 
     def __init__(self, value, is_freq=False, *args, **kwargs):
         """

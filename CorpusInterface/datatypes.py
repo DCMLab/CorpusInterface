@@ -381,7 +381,7 @@ class Pitch(Point):
         if cls._pitch_class_origin is None:
             raise NotImplementedError
         else:
-            return cls.__class__(cls._pitch_class_origin)
+            return cls(cls._pitch_class_origin)
 
     @classmethod
     def pitch_class_period(cls):
@@ -466,6 +466,8 @@ class Pitch(Point):
         yield from self.range(start=self, stop=stop, step=step, include_stop=include_stop)
 
     def pitch_class_phase(self, two_pi=False):
+        if self._pitch_class_period is None:
+            raise NotImplementedError
         if not self.is_pitch_class():
             return self.to_pitch_class().pitch_class_phase(two_pi=two_pi)
         else:
@@ -716,7 +718,7 @@ class MIDIPitch(Pitch):
         elif sharp_flat == "flat":
             fifth_steps %= -12
         else:
-            raise ValueError(f"parameter 'sharp_flat' must be on of {['sharp', 'flat', None]}")
+            raise ValueError(f"parameter 'sharp_flat' must be one of {['sharp', 'flat', None]}")
         return fifth_steps
 
     def name(self, sharp_flat=None):
@@ -727,7 +729,7 @@ class MIDIPitch(Pitch):
         elif sharp_flat == "flat":
             base_names = self._base_names_flat
         else:
-            raise ValueError("parameter 'sharp_flat' must be on of ['sharp', 'flat']")
+            raise ValueError("parameter 'sharp_flat' must be one of ['sharp', 'flat']")
         pc = base_names[self._value % 12]
         if self.is_pitch_class():
             return pc

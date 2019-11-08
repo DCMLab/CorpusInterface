@@ -726,47 +726,30 @@ class SpelledPitchInterval(Interval):
 
 class MIDIPitch(Pitch):
 
-    _diatonic_pitch_class = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
     _base_names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
-    name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>(-?[0-9]+)?)$")
-
     _pitch_class_origin = 60
     _pitch_class_period = 12
+
+    @staticmethod
+    def convert_from_SpelledPitch(spelled_pitch):
+        fifth_steps_from_f = spelled_pitch.fifth_steps() + 1
+        # base pitch
+        base_pitch = ((fifth_steps_from_f % 7 - 1) * 7) % 12
+        # chromatic semitone steps
+        if fifth_steps_from_f >= 0:
+            accidentals = fifth_steps_from_f // 7
+        else:
+            # note: floor divide rounds down (for negative numbers that is equal to the remainder of division minus one)
+            accidentals = fifth_steps_from_f // 7
+        return MIDIPitch(value=12 * (spelled_pitch.octave() + 1) + base_pitch + accidentals,
+                         is_pitch_class=spelled_pitch.is_pitch_class())
 
     def __init__(self, value, *args, is_pitch_class=None, part=None, expect_int=True, **kwargs):
         Pitch._check_type(value, (str, numbers.Number), (Pitch,))
         # pre-process value
         if isinstance(value, str):
-            str_value = value
-            # extract pitch class, modifiers, and octave
-            match = MIDIPitch.name_regex.match(value)
-            if match is None:
-                raise ValueError(f"{value} does not match the regular expression for MIDI pitch names "
-                                 f"'{MIDIPitch.name_regex.pattern}'.")
-            # initialise value with diatonic pitch class
-            value = MIDIPitch._diatonic_pitch_class[match['class']]
-            # add modifiers
-            if "#" in match['modifiers']:
-                value += len(match['modifiers'])
-            else:
-                value -= len(match['modifiers'])
-            # add octave
-            if match['octave'] == "":
-                if is_pitch_class is None:
-                    is_pitch_class = True
-                else:
-                    if not is_pitch_class:
-                        raise ValueError(f"Inconsistent arguments: {str_value} indicates a pitch class but "
-                                         f"'is_pitch_class' is {is_pitch_class}")
-            else:
-                if is_pitch_class is None:
-                    is_pitch_class = False
-                else:
-                    if is_pitch_class:
-                        raise ValueError(f"Inconsistent arguments: {str_value} does not indicate a pitch class but "
-                                         f"'is_pitch_class' is {is_pitch_class}")
-                value += 12 * (int(match['octave']) + 1)
+            value = SpelledPitch(value=value, is_pitch_class=is_pitch_class)
         elif isinstance(value, numbers.Number) and expect_int:
             int_value = int(value)
             if int_value != value:
@@ -820,6 +803,9 @@ class MIDIPitch(Pitch):
             return pc
         else:
             return pc + str(self.octave())
+
+
+Pitch.register_converter(SpelledPitch, MIDIPitch, MIDIPitch.convert_from_SpelledPitch)
 
 
 @MIDIPitch.link_interval_class()

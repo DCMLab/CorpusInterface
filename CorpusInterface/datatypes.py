@@ -188,7 +188,6 @@ class Pitch(Point):
         Vector --> Interval
     """
 
-    _interval_class = None
     _pitch_class_origin = None
     _pitch_class_period = None
 
@@ -347,9 +346,6 @@ class Pitch(Point):
             interval_class = pitch_class.link_vector_class(
                 overwrite_point_class=overwrite_pitch_class,
                 overwrite_vector_class=overwrite_interval_class)(interval_class)
-            # add renamed versions
-            pitch_class._interval_class = pitch_class._vector_class
-            interval_class._pitch_class = interval_class._point_class
             return interval_class
         return decorator
 
@@ -394,7 +390,7 @@ class Pitch(Point):
             raise NotImplementedError
         else:
             cls._assert_has_vector_class()
-            return cls._interval_class(cls._pitch_class_period)
+            return cls._vector_class(cls._pitch_class_period)
 
     @classmethod
     def range(cls, start, stop, step=None, *, include_stop=False):
@@ -408,11 +404,11 @@ class Pitch(Point):
             raise TypeError(f"Stop value has to be of type {cls} but is {type(stop)}")
         # step
         if step is None:
-            step = cls._interval_class(1)
+            step = cls._vector_class(1)
         else:
-            cls._interval_class(step)
-        if not isinstance(step, cls._interval_class):
-            raise TypeError(f"Step value has to be of type {cls._interval_class} but is {type(step)}")
+            cls._vector_class(step)
+        if not isinstance(step, cls._vector_class):
+            raise TypeError(f"Step value has to be of type {cls._vector_class} but is {type(step)}")
         # yield from range created in value type
         for val in range(start._value, (stop._value + step._value if include_stop else stop._value), step._value):
             yield cls(val)
@@ -485,18 +481,16 @@ class Pitch(Point):
 
     def to_interval(self):
         self._assert_has_vector_class()
-        return self._interval_class(self._value, is_interval_class=self.is_pitch_class())
+        return self._vector_class(self._value, is_interval_class=self.is_pitch_class())
 
 
 class Interval(Vector):
 
-    _pitch_class = None
-
     @classmethod
     def _map_to_interval_class(cls, value):
-        value %= cls._pitch_class._pitch_class_period
-        if value > cls._pitch_class._pitch_class_period / 2:
-            value -= cls._pitch_class._pitch_class_period
+        value %= cls._point_class._pitch_class_period
+        if value > cls._point_class._pitch_class_period / 2:
+            value -= cls._point_class._pitch_class_period
         return value
 
     def __init__(self, value, *args, is_interval_class=None, **kwargs):
@@ -549,7 +543,7 @@ class Interval(Vector):
         if not self.is_interval_class():
             return self.to_interval_class().phase_diff(two_pi=two_pi)
         else:
-            normed_phase_diff = self._value / self._pitch_class._pitch_class_period
+            normed_phase_diff = self._value / self._point_class._pitch_class_period
             if two_pi:
                 return normed_phase_diff * 2 * np.pi
             else:
@@ -557,7 +551,7 @@ class Interval(Vector):
 
     def to_pitch(self):
         self._assert_has_point_class()
-        return self._pitch_class(self._value, is_pitch_class=self.is_interval_class())
+        return self._point_class(self._value, is_pitch_class=self.is_interval_class())
 
     def convert_to(self, other_type):
         Pitch._check_type(other_type, bases=(Interval,), value_is_type=True)
@@ -569,12 +563,12 @@ class Interval(Vector):
             self._assert_has_point_class()
             other_type._assert_has_point_class()
             # convert interval-->equivalent pitch-->other pitch type-->equivalent interval
-            other_interval = self.to_pitch().convert_to(other_type._pitch_class).to_interval()
+            other_interval = self.to_pitch().convert_to(other_type._point_class).to_interval()
             # but point<-->value (pitch<-->interval) conversion relies on an implicit origin;
             # if the two origins of the two different pitch classes are not identical,
             # we are off by the corresponding difference;
             # the origin can be retrieved as the equivalent point of the zero vector
-            origin_from = (self - self).to_pitch().convert_to(other_type._pitch_class) # point
+            origin_from = (self - self).to_pitch().convert_to(other_type._point_class) # point
             origin_to = (other_interval - other_interval).to_pitch() # point
             origin_difference = origin_to - origin_from # vector
             # now we add that difference (we move from the "from" origin to the "to" origin)
@@ -594,8 +588,6 @@ class Time(Point):
         link_vector_class --> link_duration_class
     """
 
-    _duration_class = None
-
     @classmethod
     def link_duration_class(time_class, *, overwrite_time_class=None, overwrite_duration_class=None):
         def decorator(duration_class):
@@ -606,9 +598,6 @@ class Time(Point):
             duration_class = time_class.link_vector_class(
                 overwrite_point_class=overwrite_time_class,
                 overwrite_vector_class=overwrite_duration_class)(duration_class)
-            # add renamed versions
-            time_class._duration_class = time_class._vector_class
-            duration_class._time_class = duration_class._point_class
             return duration_class
         return decorator
 
@@ -618,8 +607,6 @@ class Time(Point):
 
 class Duration(Vector):
 
-    _time_class = None
-
     def __init__(self, value, *args, **kwargs):
         # if value is derived from Duration, try to convert to converter to this type and get the _value
         if Duration in value.__class__.__mro__:
@@ -628,7 +615,7 @@ class Duration(Vector):
 
     def to_time(self):
         self._assert_has_point_class()
-        return self._time_class(self._value)
+        return self._point_class(self._value)
 
 
 class LinearTime(Time):

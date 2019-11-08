@@ -846,7 +846,7 @@ class LogFreqPitch(Pitch):
         return np.exp(self._value)
 
     def __float__(self):
-        return self._value
+        return float(self._value)
 
     def __repr__(self):
         return f"{np.format_float_positional(self.freq(), fractional=True, precision=2)}Hz"
@@ -877,7 +877,7 @@ class LogFreqPitchInterval(Interval):
         return np.exp(self._value)
 
     def __float__(self):
-        return self._value
+        return float(self._value)
 
     def __repr__(self):
         return f"{np.format_float_positional(self.ratio(), fractional=True, precision=3)}"

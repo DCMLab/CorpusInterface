@@ -45,3 +45,28 @@ def chordify(piece):
     # turn dict into an ordered list of events with correct durations and combined event data
     return [Event(time=time, duration=next_time - time, data=frozenset([e.data for e in events]))
             for (time, events), (next_time, next_events) in zip(event_list, event_list[1:])]
+
+
+def linspace(start, stop, num=50, endpoint=True, retstep=False):
+    step = (stop - start) / (num - int(endpoint))
+    ret = [start + n * step for n in range(num)]
+    if retstep:
+        return ret, step
+    else:
+        return ret
+
+
+def prange(start, stop, step=None, *, endpoint=False):
+    if step is None:
+        step = (stop - start).__class__(1)
+    negative_step = step < (start - start)
+    running = start
+    while True:
+        if not endpoint and running == stop:
+            break
+        if negative_step and running < stop:
+            break
+        if not negative_step and running > stop:
+            break
+        yield running
+        running = running + step

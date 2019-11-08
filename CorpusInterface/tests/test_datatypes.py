@@ -2,6 +2,7 @@ from unittest import TestCase
 from CorpusInterface.datatypes import Point, Vector, Pitch, Interval, Time, Duration
 from CorpusInterface.datatypes import MIDIPitch, MIDIPitchInterval
 from CorpusInterface.datatypes import LogFreqPitch
+from CorpusInterface.util import prange
 import numpy as np
 
 
@@ -196,15 +197,10 @@ class TestMIDIPitch(TestCase):
         i1 = MIDIPitch("C#4") - MIDIPitch("C4")
         i2 = MIDIPitch("D4") - MIDIPitch("C4")
 
-        self.assertEqual([int(p) for p in p1.range_to(p2)], list(range(60, 72)))
-        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i1)], list(range(60, 72)))
-        self.assertEqual([int(p) for p in p1.range_to(p2, i2)], list(range(60, 72, 2)))
-        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i2)], list(range(60, 72, 2)))
-
-        self.assertEqual([int(p) for p in p1.range_to(p2, include_stop=True)], list(range(60, 73)))
-        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i1, include_stop=True)], list(range(60, 73)))
-        self.assertEqual([int(p) for p in p1.range_to(p2, i2, include_stop=True)], list(range(60, 73, 2)))
-        self.assertEqual([int(p) for p in MIDIPitch.range(p1, p2, i2, include_stop=True)], list(range(60, 73, 2)))
+        self.assertEqual([int(p) for p in prange(p1, p2, i1)], list(range(60, 72)))
+        self.assertEqual([int(p) for p in prange(p1, p2, i2)], list(range(60, 72, 2)))
+        self.assertEqual([int(p) for p in prange(p1, p2, i1, endpoint=True)], list(range(60, 73)))
+        self.assertEqual([int(p) for p in prange(p1, p2, i2, endpoint=True)], list(range(60, 73, 2)))
 
 
 class TestLogFreqPitch(TestCase):

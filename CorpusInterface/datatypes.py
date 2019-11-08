@@ -14,6 +14,8 @@ class Point:
     semantics of this value and any extended functionality is defined via the derived classes.
     """
 
+    _vector_class = None
+
     @total_ordering
     class Vector:
         """
@@ -23,10 +25,12 @@ class Point:
         is likely to cause trouble, but you can force it if feel that you absolutely need to.
         """
 
+        _point_class = None
+
         @classmethod
         def _assert_has_point_class(cls):
-            if not hasattr(cls, "_point_class"):
-                raise AttributeError(f"This class ({cls}) does not have a '_point_class' attribute")
+            if cls._point_class is None:
+                raise AttributeError(f"This class ({cls}) does not have an associated point class")
 
         @classmethod
         def _assert_is_vector(cls, other):
@@ -102,11 +106,11 @@ class Point:
             if Point.Vector not in vector_class.__mro__:
                 raise TypeError(f"Provided class {vector_class} does not derive from {Point.Vector}")
             # check if point class already has an associated vector class
-            if overwrite_vector_class is None and hasattr(point_class, "_vector_class"):
+            if overwrite_vector_class is None and point_class._vector_class is not None:
                 raise AttributeError(
                     f"Class '{point_class}' already has an associated vector class ({point_class._vector_class})")
             # check if vector class already has an associated point class
-            if overwrite_point_class is None and hasattr(vector_class, "_point_class"):
+            if overwrite_point_class is None and vector_class._point_class is not None:
                 raise AttributeError(
                     f"Class '{vector_class}' already has an associated point class ({vector_class._point_class})")
             # let the point class know its vector class and vice versa
@@ -119,8 +123,8 @@ class Point:
 
     @classmethod
     def _assert_has_vector_class(cls):
-        if not hasattr(cls, "_vector_class"):
-            raise AttributeError(f"This class ({cls}) does not have a '_vector_class' attribute")
+        if cls._vector_class is None:
+            raise AttributeError(f"This class ({cls}) does not have an associated vector class")
 
     @classmethod
     def _assert_is_point(cls, other):
@@ -183,6 +187,8 @@ class Pitch(Point):
         Point.Vector --> Pitch.Interval
     """
 
+    _interval_class = None
+
     @staticmethod
     def _check_class_param_consistency(param_value, object_value):
         """
@@ -211,6 +217,8 @@ class Pitch(Point):
                                  f"parameter specification ({param_value})")
 
     class Interval(Point.Vector):
+
+        _pitch_class = None
 
         @classmethod
         def _map_to_interval_class(cls, value):
@@ -585,7 +593,11 @@ class Time(Point):
         link_vector_class --> link_duration_class
     """
 
+    _duration_class = None
+
     class Duration(Point.Vector):
+
+        _time_class = None
 
         def __init__(self, value, *args, **kwargs):
             # if value is derived from Time.Duration, try to convert to converter to this type and get the _value

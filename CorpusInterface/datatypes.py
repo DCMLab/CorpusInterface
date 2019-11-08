@@ -639,6 +639,91 @@ class LinearTimeDuration(Duration):
         return float(self._value)
 
 
+class SpelledPitch(Pitch):
+    _diatonic_fifth_steps = {"F": -1, "C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5}
+    name_regex = re.compile("^(?P<class>[A-G])(?P<modifiers>(b*)|(#*))(?P<octave>(-?[0-9]+)?)$")
+
+    _pitch_class_origin = np.array([0, 0])
+
+    @classmethod
+    def _map_to_pitch_class(cls, value):
+        return np.array([value[0], 0])
+
+    def __init__(self, value, *args, is_pitch_class=None, **kwargs):
+        Pitch._check_type(value, (str, np.ndarray, list, tuple), (Pitch,))
+        # pre-process value
+        if isinstance(value, str):
+            str_value = value
+            # extract pitch class, modifiers, and octave
+            match = SpelledPitch.name_regex.match(value)
+            if match is None:
+                raise ValueError(f"{value} does not match the regular expression for spelled pitch names "
+                                 f"'{SpelledPitch.name_regex.pattern}'.")
+            # initialise value with diatonic pitch class
+            value = np.array([SpelledPitch._diatonic_fifth_steps[match['class']], 0])
+            # add modifiers
+            if "#" in match['modifiers']:
+                value[0] += 7 * len(match['modifiers'])
+            else:
+                value[0] -= 7 * len(match['modifiers'])
+            # add octave
+            if match['octave'] == "":
+                if is_pitch_class is None:
+                    is_pitch_class = True
+                else:
+                    if not is_pitch_class:
+                        raise ValueError(f"Inconsistent arguments: {str_value} indicates a pitch class but "
+                                         f"'is_pitch_class' is {is_pitch_class}")
+            else:
+                if is_pitch_class is None:
+                    is_pitch_class = False
+                else:
+                    if is_pitch_class:
+                        raise ValueError(f"Inconsistent arguments: {str_value} does not indicate a pitch class but "
+                                         f"'is_pitch_class' is {is_pitch_class}")
+                value[1] += int(match['octave'])
+        elif isinstance(value, (np.ndarray, list, tuple)):
+            int_value = np.array(value, dtype=np.int)
+            if not np.array_equal(int_value, value):
+                raise ValueError(f"Expected integer values but got {value}")
+            value = int_value
+        # hand on initialisation to other base classes
+        super().__init__(value=value, is_pitch_class=is_pitch_class, *args, **kwargs)
+
+    def __repr__(self):
+        return self.name()
+
+    def fifth_steps(self):
+        return self._value[0]
+
+    def octave(self):
+        return self._value[1]
+
+    def freq(self):
+        raise NotImplementedError
+        # return 2 ** ((self._value - 69) / 12) * 440
+
+    def name(self):
+        pitch_class = ["F", "C", "G", "D", "A", "E", "B"][(self._value[0] + 1) % 7]
+        sharp_flat = (self._value[0] + 1) // 7
+        pitch_class += ('#' if sharp_flat > 0 else 'b') * abs(sharp_flat)
+        if self.is_pitch_class():
+            return pitch_class
+        else:
+            return pitch_class + str(self._value[1])
+
+
+@SpelledPitch.link_interval_class()
+class SpelledPitchInterval(Interval):
+
+    def __init__(self, value, *args, **kwargs):
+        Pitch._check_type(value, (numbers.Number,), (Interval,))
+        int_value = np.array(value, dtype=np.int)
+        if not np.array_equal(int_value, value):
+            raise ValueError(f"Expected integer values but got {value}")
+        super().__init__(value=int_value, *args, **kwargs)
+
+
 class MIDIPitch(Pitch):
 
     _diatonic_pitch_class = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}

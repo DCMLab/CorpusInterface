@@ -1,5 +1,5 @@
 from unittest import TestCase
-from CorpusInterface.datatypes import Point, Pitch, Time
+from CorpusInterface.datatypes import Point, Vector, Pitch, Interval, Time, Duration
 from CorpusInterface.datatypes import MIDIPitch, MIDIPitchInterval
 from CorpusInterface.datatypes import LogFreqPitch
 import numpy as np
@@ -28,12 +28,12 @@ class TestPoint(TestCase):
                     if Base == Pitch:
                         # create interval class
                         @NewBase.link_interval_class()
-                        class NewBaseInterval(Pitch.Interval):
+                        class NewBaseInterval(Interval):
                             pass
                         # assert second call raises an error
                         try:
                             @NewBase.link_interval_class()
-                            class NewBaseInterval(Pitch.Interval):
+                            class NewBaseInterval(Interval):
                                 pass
                         except AttributeError:
                             pass
@@ -41,7 +41,7 @@ class TestPoint(TestCase):
                             self.fail("Should have raise AttributeError")
                         # assert overwriting can be forced
                         @NewBase.link_interval_class(overwrite_interval_class=True)
-                        class NewBaseInterval(Pitch.Interval):
+                        class NewBaseInterval(Interval):
                             pass
 
                         # check class assignment
@@ -57,12 +57,12 @@ class TestPoint(TestCase):
                     elif Base == Time:
                         # create duration class
                         @NewBase.link_duration_class()
-                        class NewBaseDuration(Time.Duration):
+                        class NewBaseDuration(Duration):
                             pass
                         # assert second call raises an error
                         try:
                             @NewBase.link_duration_class()
-                            class NewBaseDuration(Time.Duration):
+                            class NewBaseDuration(Duration):
                                 pass
                         except AttributeError:
                             pass
@@ -70,7 +70,7 @@ class TestPoint(TestCase):
                             self.fail("Should have raise AttributeError")
                         # assert overwriting can be forced
                         @NewBase.link_duration_class(overwrite_duration_class=True)
-                        class NewBaseDuration(Time.Duration):
+                        class NewBaseDuration(Duration):
                             pass
 
                         # check class assignment
@@ -86,12 +86,12 @@ class TestPoint(TestCase):
                     else:
                         # create vector class
                         @NewBase.link_vector_class()
-                        class NewBaseVector(Point.Vector):
+                        class NewBaseVector(Vector):
                             pass
                         # assert second call raises an error
                         try:
                             @NewBase.link_vector_class()
-                            class NewBaseVector(Point.Vector):
+                            class NewBaseVector(Vector):
                                 pass
                         except AttributeError:
                             pass
@@ -99,7 +99,7 @@ class TestPoint(TestCase):
                             self.fail("Should have raise AttributeError")
                         # assert overwriting can be forced
                         @NewBase.link_vector_class(overwrite_vector_class=True)
-                        class NewBaseVector(Point.Vector):
+                        class NewBaseVector(Vector):
                             pass
 
                         # check class assignment
@@ -237,7 +237,7 @@ class TestConverters(TestCase):
             def __init__(self, value, *args, **kwargs):
                 super().__init__(int(value), *args, **kwargs)
         @PitchA.link_interval_class()
-        class PitchAInterval(Pitch.Interval):
+        class PitchAInterval(Interval):
             pass
 
         class PitchB(Pitch):
@@ -259,7 +259,7 @@ class TestConverters(TestCase):
                 return self._vector_class(int(self._value))
         Pitch.register_converter(PitchB, PitchA, PitchB.convert_to_PitchA)
         @PitchB.link_interval_class()
-        class PitchBInterval(Pitch.Interval):
+        class PitchBInterval(Interval):
             pass
 
         # instantiate objects and check (in)equality and conversion)
@@ -293,7 +293,7 @@ class TestConverters(TestCase):
             def to_interval(self):
                 return self._vector_class(len(self._value))
         @PitchC.link_interval_class()
-        class PitchCInterval(Pitch.Interval):
+        class PitchCInterval(Interval):
             pass
 
         # instantiate object and check (in)equality

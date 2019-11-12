@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-from CorpusInterface.datatypes import MIDIPitch
 from CorpusInterface.util import split_midi_by_parts
 import numpy as np
 
 
-def pianoroll(events, ax=None, **kwargs):
+def pianoroll(events, ax=None, show=False, **kwargs):
     # create axis if needed
     if ax is None:
         fig, ax_ = plt.subplots(1, 1, **kwargs)
@@ -36,5 +35,9 @@ def pianoroll(events, ax=None, **kwargs):
     ax_.set_xlabel("time")
     ax_.set_ylabel("pitch")
     ax_.set_yticks([])
+    ax_.grid(b=True, which='major', color='#666666', linestyle='-')
+    ax_.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+    if show:
+        plt.show()
     if ax is None:
         return fig, ax_

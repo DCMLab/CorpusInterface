@@ -91,19 +91,19 @@ class Point:
         return self.__class__(self._value + other._value)
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        else:
+        if isinstance(other, self.__class__):
             return self._value == other._value
+        else:
+            return NotImplemented
 
     def __hash__(self):
         return hash(self._value)
 
     def __lt__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        else:
+        if isinstance(other, self.__class__):
             return self._value < other._value
+        else:
+            return NotImplemented
 
     def to_vector(self):
         self._assert_has_vector_class()
@@ -159,19 +159,19 @@ class Vector:
         return abs(self._value)
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        else:
+        if isinstance(other, self.__class__):
             return self._value == other._value
+        else:
+            return NotImplemented
 
     def __hash__(self):
         return hash(self._value)
 
     def __lt__(self, other):
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        else:
+        if isinstance(other, self.__class__):
             return self._value < other._value
+        else:
+            return NotImplemented
 
     def to_point(self):
         self._assert_has_point_class()

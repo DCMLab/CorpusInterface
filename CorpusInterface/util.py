@@ -1,4 +1,5 @@
-from CorpusInterface.datatypes import MIDIPitch, Event
+from CorpusInterface.datatypes import Event
+from CorpusInterface.midi import MIDINote
 
 
 def split_midi_by_parts(events):
@@ -6,9 +7,9 @@ def split_midi_by_parts(events):
     part_ids = []
     part_indices = {}
     for e in events:
-        if not isinstance(e.data, MIDIPitch):
+        if not isinstance(e.data, MIDINote):
             raise TypeError("Expect events with MIDIPitch data")
-        part = e.data.part
+        part = (e.data.channel, e.data.track)
         if part not in part_indices:
             part_indices[part] = len(part_indices)
             part_ids.append(part)

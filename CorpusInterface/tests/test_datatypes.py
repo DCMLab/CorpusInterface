@@ -1,6 +1,6 @@
 from unittest import TestCase
 from CorpusInterface.datatypes import Point, Vector, Pitch, Interval, Time, Duration
-from CorpusInterface.datatypes import MIDIPitch, MIDIPitchInterval
+from CorpusInterface.datatypes import EnharmonicPitch, EnharmonicPitchInterval
 from CorpusInterface.datatypes import LogFreqPitch
 from CorpusInterface.util import prange
 import numpy as np
@@ -136,9 +136,9 @@ class TestMIDIPitch(TestCase):
 
     def test_init(self):
         for p in ["C5", "B#4", "A###4", "Dbb5"]:
-            self.assertEqual(MIDIPitch(p), MIDIPitch(72))
+            self.assertEqual(EnharmonicPitch(p), EnharmonicPitch(72))
         for p in ["C5-", "B#b", "c5"]:
-            self.assertRaises(ValueError, lambda: MIDIPitch(p))
+            self.assertRaises(ValueError, lambda: EnharmonicPitch(p))
         for midi_name_sharp, midi_name_flat, midi_number in zip(
                 ["C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4",
                  "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5",],
@@ -146,9 +146,9 @@ class TestMIDIPitch(TestCase):
                  "C5", "Db5", "D5", "Eb5", "E5", "F5", "Gb5", "G5", "Ab5", "A5", "Bb5", "B5",],
                 range(60, 85)
         ):
-            from_flat = MIDIPitch(midi_name_flat)
-            from_sharp = MIDIPitch(midi_name_sharp)
-            from_number = MIDIPitch(midi_number)
+            from_flat = EnharmonicPitch(midi_name_flat)
+            from_sharp = EnharmonicPitch(midi_name_sharp)
+            from_number = EnharmonicPitch(midi_number)
             self.assertEqual(from_flat, from_number)
             self.assertEqual(from_sharp, from_number)
             self.assertEqual(midi_number, int(from_number))
@@ -156,17 +156,17 @@ class TestMIDIPitch(TestCase):
             self.assertEqual(from_sharp.to_pitch_class()._value, midi_number % 12)
 
     def test_freq(self):
-        self.assertEqual(MIDIPitch("A4").freq(), 440)
-        self.assertEqual(MIDIPitch("A5").freq(), 880)
+        self.assertEqual(EnharmonicPitch("A4").freq(), 440)
+        self.assertEqual(EnharmonicPitch("A5").freq(), 880)
 
     def test_arithmetics(self):
-        c4 = MIDIPitch("C4")
-        d4 = MIDIPitch("D4")
-        g4 = MIDIPitch("G4")
+        c4 = EnharmonicPitch("C4")
+        d4 = EnharmonicPitch("D4")
+        g4 = EnharmonicPitch("G4")
         icg = c4 - g4
         idc = d4 - c4
-        self.assertEqual(icg, MIDIPitchInterval(-7))
-        self.assertEqual(idc, MIDIPitchInterval(2))
+        self.assertEqual(icg, EnharmonicPitchInterval(-7))
+        self.assertEqual(idc, EnharmonicPitchInterval(2))
 
         pc_c4 = c4.to_pitch_class()
         pc_d4 = d4.to_pitch_class()
@@ -174,14 +174,14 @@ class TestMIDIPitch(TestCase):
         pci_cg = pc_c4 - pc_g4
         pci_dc = pc_d4 - pc_c4
 
-        self.assertEqual(icg.to_interval_class(), MIDIPitchInterval(icg._value, is_interval_class=True))
+        self.assertEqual(icg.to_interval_class(), EnharmonicPitchInterval(icg._value, is_interval_class=True))
 
-        self.assertEqual(pci_cg, MIDIPitchInterval(5, is_interval_class=True))
-        self.assertEqual(pci_cg, MIDIPitchInterval(-7, is_interval_class=True))
+        self.assertEqual(pci_cg, EnharmonicPitchInterval(5, is_interval_class=True))
+        self.assertEqual(pci_cg, EnharmonicPitchInterval(-7, is_interval_class=True))
         self.assertEqual(pci_cg._value, 5)
 
-        self.assertEqual(pci_dc, MIDIPitchInterval(2, is_interval_class=True))
-        self.assertEqual(pci_dc, MIDIPitchInterval(-10, is_interval_class=True))
+        self.assertEqual(pci_dc, EnharmonicPitchInterval(2, is_interval_class=True))
+        self.assertEqual(pci_dc, EnharmonicPitchInterval(-10, is_interval_class=True))
         self.assertEqual(int(pci_dc), 2)
 
         self.assertEqual(pc_c4.pitch_class_phase(), 0)
@@ -192,10 +192,10 @@ class TestMIDIPitch(TestCase):
         self.assertEqual(pci_dc.phase_diff(), 2 / 12)
 
     def test_range(self):
-        p1 = MIDIPitch("C4")
-        p2 = MIDIPitch("C5")
-        i1 = MIDIPitch("C#4") - MIDIPitch("C4")
-        i2 = MIDIPitch("D4") - MIDIPitch("C4")
+        p1 = EnharmonicPitch("C4")
+        p2 = EnharmonicPitch("C5")
+        i1 = EnharmonicPitch("C#4") - EnharmonicPitch("C4")
+        i2 = EnharmonicPitch("D4") - EnharmonicPitch("C4")
 
         self.assertEqual([int(p) for p in prange(p1, p2, i1)], list(range(60, 72)))
         self.assertEqual([int(p) for p in prange(p1, p2, i2)], list(range(60, 72, 2)))
@@ -206,8 +206,8 @@ class TestMIDIPitch(TestCase):
 class TestLogFreqPitch(TestCase):
 
     def test_against_MIDI(self):
-        c4 = MIDIPitch("C4")
-        d4 = MIDIPitch("D4")
+        c4 = EnharmonicPitch("C4")
+        d4 = EnharmonicPitch("D4")
         lc4 = c4.convert_to(LogFreqPitch)
         ld4 = d4.convert_to(LogFreqPitch)
         pci = d4.to_pitch_class() - c4.to_pitch_class()

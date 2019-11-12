@@ -1,5 +1,5 @@
 from unittest import TestCase
-from CorpusInterface.datatypes import LinearTime, LogFreqPitch, MIDIPitch
+from CorpusInterface.datatypes import LinearTime, LogFreqPitch, EnharmonicPitch
 from CorpusInterface.util import linspace, prange
 import numpy as np
 
@@ -33,7 +33,7 @@ class TestPrange(TestCase):
 
     def test_against_range(self):
         for _ in range(10):
-            for t in [int, MIDIPitch]:
+            for t in [int, EnharmonicPitch]:
                 start, stop = tuple(sorted(np.random.randint(-20, 20, 2)))
                 step = np.random.choice([-3, -2, -1, None, 1, 2, 3])
                 if step is not None and step < 0:

@@ -700,7 +700,7 @@ class SpelledPitchInterval(Interval):
         super().__init__(value=int_value, *args, **kwargs)
 
 
-class MIDIPitch(Pitch):
+class EnharmonicPitch(Pitch):
 
     _base_names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     _base_names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
@@ -718,10 +718,10 @@ class MIDIPitch(Pitch):
         else:
             # note: floor divide rounds down (for negative numbers that is equal to the remainder of division minus one)
             accidentals = fifth_steps_from_f // 7
-        return MIDIPitch(value=12 * (spelled_pitch.octave() + 1) + base_pitch + accidentals,
-                         is_pitch_class=spelled_pitch.is_pitch_class())
+        return EnharmonicPitch(value=12 * (spelled_pitch.octave() + 1) + base_pitch + accidentals,
+                               is_pitch_class=spelled_pitch.is_pitch_class())
 
-    def __init__(self, value, *args, is_pitch_class=None, part=None, expect_int=True, **kwargs):
+    def __init__(self, value, *args, is_pitch_class=None, expect_int=True, **kwargs):
         Pitch._check_type(value, (str, numbers.Number), (Pitch,))
         # pre-process value
         if isinstance(value, str):
@@ -733,8 +733,6 @@ class MIDIPitch(Pitch):
             value = int_value
         # hand on initialisation to other base classes
         super().__init__(value=value, is_pitch_class=is_pitch_class, *args, **kwargs)
-        # finish initialisation
-        self.part = part
 
     def __int__(self):
         return self._value
@@ -781,11 +779,11 @@ class MIDIPitch(Pitch):
             return pc + str(self.octave())
 
 
-Pitch.register_converter(SpelledPitch, MIDIPitch, MIDIPitch.convert_from_SpelledPitch)
+Pitch.register_converter(SpelledPitch, EnharmonicPitch, EnharmonicPitch.convert_from_SpelledPitch)
 
 
-@MIDIPitch.link_interval_class()
-class MIDIPitchInterval(Interval):
+@EnharmonicPitch.link_interval_class()
+class EnharmonicPitchInterval(Interval):
 
     def __init__(self, value, *args, **kwargs):
         Pitch._check_type(value, (numbers.Number,), (Interval,))
@@ -828,7 +826,7 @@ class LogFreqPitch(Pitch):
         return f"{np.format_float_positional(self.freq(), fractional=True, precision=2)}Hz"
 
 
-Pitch.register_converter(MIDIPitch, LogFreqPitch, LogFreqPitch.convert_from_midi_pitch)
+Pitch.register_converter(EnharmonicPitch, LogFreqPitch, LogFreqPitch.convert_from_midi_pitch)
 
 
 @LogFreqPitch.link_interval_class()

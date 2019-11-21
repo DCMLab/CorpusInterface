@@ -7,6 +7,7 @@ import pandas as pd
 import random
 import urllib.request
 import tarfile
+import zipfile
 import logging
 
 from CorpusInterface.corpus import FileCorpus
@@ -86,6 +87,12 @@ def download(*, name, index_path=None, root_dir=None):
             tar = tarfile.open(local_filename, "r:gz")
             tar.extractall(corpus_dir)
             tar.close()
+            os.remove(local_filename)
+        elif info['AccessMethod'] == 'zip':
+            local_filename, headers = urllib.request.urlretrieve(info['URL'])
+            zf = zipfile.ZipFile(local_filename)
+            zf.extractall(path=corpus_dir)
+            zf.close()
             os.remove(local_filename)
         else:
             raise ValueError(f"Unknown access method '{info['AccessMethod']}' specified")

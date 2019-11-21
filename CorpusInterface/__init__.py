@@ -107,6 +107,9 @@ def load(name, index_path=None, root_dir=None, allow_download=False):
         download(name=name, index_path=index_path, root_dir=root_dir)
         if not os.path.isdir(corpus_dir):
             raise Warning("Still cannot find corpus...did the download fail?")
+    # We want the FileCorpus to look at the proper place inside the parent
+    # corpus though
+    corpus_dir = get_dir(name=name, index_path=index_path, root_dir=root_dir)
     if corpus_info['CorpusType'] == "files":
         return FileCorpus(path=corpus_dir,
                           metadata=corpus_info['Metadata'],

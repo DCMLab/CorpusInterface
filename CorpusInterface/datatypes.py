@@ -190,6 +190,8 @@ class Pitch(Point):
 
     _pitch_class_origin = None
     _pitch_class_period = None
+    is_pitch = True
+    is_interval = False
 
     @staticmethod
     def _check_class_param_consistency(param_value, object_value):
@@ -412,18 +414,21 @@ class Pitch(Point):
         # do arithmetics
         ret = super().__sub__(other)
         # check for class/non-class
-        try:
+        if other.is_pitch:
             other_is_class = other.is_pitch_class()
-        except AttributeError:
+        else:
             other_is_class = other.is_interval_class()
         if self.is_pitch_class() != other_is_class:
             raise TypeError(f"Cannot combine pitch class and non-class types "
                             f"(this: {self.is_pitch_class()}, other: {other_is_class})")
         # convert to class if required
-        try:
-            return ret if not self.is_pitch_class() else ret.to_pitch_class()
-        except AttributeError:
-            return ret if not self.is_pitch_class() else ret.to_interval_class()
+        if self.is_pitch and self.is_pitch_class() or self.is_interval and self.is_interval_class():
+            if ret.is_pitch:
+                return ret.to_pitch_class()
+            else:
+                return ret.to_interval_class()
+        else:
+            return ret
 
     def __add__(self, other):
         # do arithmetics
@@ -463,6 +468,9 @@ class Pitch(Point):
 
 
 class Interval(Vector):
+
+    is_pitch = False
+    is_interval = True
 
     @classmethod
     def _map_to_interval_class(cls, value):

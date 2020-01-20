@@ -1,6 +1,6 @@
 import pandas as pd
 from CorpusInterface.datatypes import Event, LinearTime, LinearTimeDuration
-from CorpusInterface.midi import MIDINote, MIDITempo, MIDITimeSignature
+from CorpusInterface.midi import MIDINote, MIDITempo, MIDITimeSignature, EnharmonicPitch
 from fractions import Fraction
 import music21
 import mido
@@ -39,7 +39,7 @@ def read_tsv(path, *args, **kwargs):
     return list(events)
 
 
-def read_midi_mido(path, raw=False, quantise=None, time_sig=False, tempo=False, *args, **kwargs):
+def read_midi_mido(path, raw=False, quantise=None, time_sig=False, tempo=False, as_enharmonic=False, *args, **kwargs):
     mid = mido.MidiFile(path)
     piece = []
     ticks_per_beat = mid.ticks_per_beat
@@ -89,13 +89,14 @@ def read_midi_mido(path, raw=False, quantise=None, time_sig=False, tempo=False, 
                                 # append to track
                                 track.append(Event(time=LinearTime(onset_time),
                                                    duration=LinearTimeDuration(note_duration),
-                                                   data=MIDINote(value=msg.note,
-                                                                 velocity=active_notes[note][1],
-                                                                 channel=msg.channel,
-                                                                 track=track_id)))
+                                                   data=EnharmonicPitch(value=msg.note) if as_enharmonic else
+                                                   MIDINote(value=msg.note,
+                                                            velocity=active_notes[note][1],
+                                                            channel=msg.channel,
+                                                            track=track_id)))
                                 del active_notes[note]
                             else:
-                                raise ValueError(f"{note} not active")
+                                raise ValueError(f"{note} not active (time={time}, msg.type={msg.type}, msg.velocity={msg.velocity})")
         piece += track
     return list(sorted(piece, key=lambda x: x.time))
 

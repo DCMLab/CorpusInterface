@@ -26,6 +26,13 @@ class MIDINote(EnharmonicPitch):
     def __repr__(self):
         return super().__repr__() + f" [velocity={self.velocity}, channel={self.channel}, track={self.track}]"
 
+    def to_pitch_class(self):
+        return self.__class__(value=self._value,
+                              velocity=self.velocity,
+                              channel=self.channel,
+                              track=self.track,
+                              is_pitch_class=True)
+
 
 @MIDINote.link_interval_class(overwrite_interval_class=True)
 class MIDIInterval(Interval):

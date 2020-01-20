@@ -24,22 +24,22 @@ def chordify(piece, duration_threshold=0):
     for e in piece:
         # add onset and offset time slot
         if not e.time in event_dict:
-            event_dict[e.time] = []
+            event_dict[e.time] = set()
         if not e.time + e.duration in event_dict:
-            event_dict[e.time + e.duration] = []
+            event_dict[e.time + e.duration] = set()
         # add event to onset time slot
-        event_dict[e.time].append(e)
+        event_dict[e.time].add(e)
     # turn dict into ordered list of time-events pairs
     event_list = list(sorted(event_dict.items(), key=lambda item: item[0]))
     # take care of events that extend over multiple time slots
-    active_events = []
+    active_events = set()
     for time, events in event_list:
         # from the active events (that started earlier) only keep those that reach into current time slot
-        active_events = [event for event in active_events if event.time + event.duration > time]
+        active_events = set(event for event in active_events if event.time + event.duration > time)
         # add these events to the current time slot
-        events += active_events
+        events |= active_events
         # remember events that start with this slot to possibly add them in later slots
-        active_events += events
+        active_events |= events
     # the last element should not contain any events as it was only created because the last event(s) ended at that time
     if event_list[-1][1]:
         raise ValueError("The last time slot should be empty. This is a bug (maybe due to floating point arithmetics?)")

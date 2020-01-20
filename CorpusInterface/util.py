@@ -1,4 +1,4 @@
-from CorpusInterface.datatypes import Event
+from CorpusInterface.datatypes import Event, Vector
 from CorpusInterface.midi import MIDINote
 
 
@@ -60,7 +60,10 @@ def linspace(start, stop, num=50, endpoint=True, retstep=False):
 
 def prange(start, stop, step=None, *, endpoint=False):
     if step is None:
-        step = (stop - start).__class__(1)
+        if isinstance(stop - start, Vector):
+            step = (stop - start).__class__(1, is_interval_class=start.is_pitch_class())
+        else:
+            step = 1
     negative_step = step < (start - start)
     running = start
     while True:

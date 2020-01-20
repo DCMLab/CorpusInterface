@@ -740,6 +740,21 @@ class SpelledPitch(Pitch):
     def __repr__(self):
         return self.name()
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return tuple(self._value) == tuple(other._value)
+        else:
+            return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, self.__class__) and self.is_pitch_class() and other.is_pitch_class():
+            return self._value[0] < other._value[0]
+        else:
+            return NotImplemented
+
+    def __hash__(self):
+        return hash(tuple(self._value))
+
     def __int__(self):
         if self.is_pitch_class():
             return int(self._value[0])
@@ -782,6 +797,21 @@ class SpelledPitchInterval(Interval):
         if not np.array_equal(int_value, value):
             raise ValueError(f"Expected integer values but got {value}")
         super().__init__(value=int_value, is_interval_class=is_interval_class, *args, **kwargs)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return tuple(self._value) == tuple(other._value)
+        else:
+            return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, self.__class__) and self.is_interval_class() and other.is_interval_class():
+            return self._value[0] < other._value[0]
+        else:
+            return NotImplemented
+
+    def __hash__(self):
+        return hash(tuple(self._value))
 
     def __int__(self):
         if self.is_interval_class():

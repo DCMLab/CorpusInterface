@@ -18,7 +18,7 @@ def split_midi_by_parts(events):
     return part_list
 
 
-def chordify(piece):
+def chordify(piece, duration_threshold=0):
     # create dictionary with time on- and offsets and events starting at a certain onset
     event_dict = {}
     for e in piece:
@@ -45,7 +45,8 @@ def chordify(piece):
         raise ValueError("The last time slot should be empty. This is a bug (maybe due to floating point arithmetics?)")
     # turn dict into an ordered list of events with correct durations and combined event data
     return [Event(time=time, duration=next_time - time, data=frozenset([e.data for e in events]))
-            for (time, events), (next_time, next_events) in zip(event_list, event_list[1:])]
+            for (time, events), (next_time, next_events) in zip(event_list, event_list[1:])
+            if float(next_time - time) >= duration_threshold]
 
 
 def linspace(start, stop, num=50, endpoint=True, retstep=False):

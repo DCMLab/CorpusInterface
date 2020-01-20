@@ -784,6 +784,10 @@ class SpelledPitch(Pitch):
 @SpelledPitch.link_interval_class()
 class SpelledPitchInterval(Interval):
 
+    @classmethod
+    def _map_to_interval_class(cls, value):
+        return np.array([value[0], 0])
+
     def __init__(self, value, is_interval_class=None, *args, **kwargs):
         Pitch._check_type(value, (numbers.Number, np.ndarray, list, tuple), (Interval,))
         # int-values --> interval class
@@ -816,6 +820,12 @@ class SpelledPitchInterval(Interval):
     def __int__(self):
         if self.is_interval_class():
             return int(self._value[0])
+        else:
+            raise NotImplementedError
+
+    def __abs__(self):
+        if self.is_interval_class():
+            return abs(self._value[0])
         else:
             raise NotImplementedError
 

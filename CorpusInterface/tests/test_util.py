@@ -1,7 +1,25 @@
 from unittest import TestCase
 from CorpusInterface.datatypes import LinearTime, LogFreqPitch, EnharmonicPitch
-from CorpusInterface.util import linspace, prange
+from CorpusInterface.util import chordify, linspace, prange
+from CorpusInterface.readers import read_midi
 import numpy as np
+import unittest
+
+
+class TestChordify(TestCase):
+
+    def test_chordify(self):
+        piece = read_midi('chordify_test.mid', quantise=1 / 32)
+        # for p in piece:
+        #     print(p)
+        # print("")
+        chordified_piece = chordify(piece)
+        # for c in chordified_piece:
+        #     print(c)
+        # print("")
+        self.assertEqual(len(chordified_piece), 5)
+        self.assertEqual([float(e.time) for e in chordified_piece], [0., 1., 2., 3.5, 3.75])
+        self.assertEqual([float(e.duration) for e in chordified_piece], [1., 1., 1.5, 0.25, 6.25])
 
 
 class TestLinspace(TestCase):

@@ -2,6 +2,7 @@ from unittest import TestCase
 from CorpusInterface.datatypes import Point, Vector, Pitch, Interval, Time, Duration
 from CorpusInterface.datatypes import EnharmonicPitch, EnharmonicPitchInterval
 from CorpusInterface.datatypes import LogFreqPitch
+from CorpusInterface.datatypes import LinearTime, LinearTimeDuration
 from CorpusInterface.util import prange
 import numpy as np
 
@@ -130,6 +131,42 @@ class TestPoint(TestCase):
                     self.assertRaises(AttributeError, lambda: p1 + p2)
                     self.assertRaises(AttributeError, lambda: p1 - p2)
                     self.assertRaises(AttributeError, lambda: p1.to_vector())
+
+
+class TestLinearTime(TestCase):
+
+    def test_comparison(self):
+        for f1, f2 in np.random.uniform(-10, 10, (10, 2)):
+            t1 = LinearTime(f1)
+            t2 = LinearTime(f2)
+            d1 = LinearTimeDuration(f1)
+            d2 = LinearTimeDuration(f2)
+
+            # check arithmetics
+            self.assertEqual(type(t1 - t2), LinearTimeDuration)
+            self.assertRaises(TypeError, lambda:t1 + t2)
+            self.assertEqual(type(t1 - d2), LinearTime)
+            self.assertEqual(type(t1 + d2), LinearTime)
+            self.assertRaises(TypeError, lambda:d1 - t2)
+            self.assertRaises(TypeError, lambda:d1 + t2)
+            self.assertEqual(type(d1 - d2), LinearTimeDuration)
+            self.assertEqual(type(d1 + d2), LinearTimeDuration)
+
+            # check equality and inequality
+            for v1a in [f1, t1, d1]:
+                for v1b in [f1, t1, d1]:
+                    self.assertEqual(v1a, v1b)
+            for v2a in [f2, t2, d2]:
+                for v2b in [f2, t2, d2]:
+                    self.assertEqual(v2a, v2b)
+            for v1 in [f1, t1, d1]:
+                for v2 in [f2, t2, d2]:
+                    if f1 < f2:
+                        self.assertLess(v1, v2)
+                        self.assertGreaterEqual(v2, v1)
+                    else:
+                        self.assertLess(v2, v1)
+                        self.assertGreaterEqual(v1, v2)
 
 
 class TestMIDIPitch(TestCase):

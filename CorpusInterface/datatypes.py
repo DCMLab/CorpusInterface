@@ -616,23 +616,67 @@ class Duration(Vector):
         return self._point_class(self._value)
 
 
-class LinearTime(Time):
+class LinearTime(Time, float):
+
+    def __new__(cls, *args, **kwargs):
+        return float.__new__(cls, *args, **kwargs)
 
     def __init__(self, value, *args, **kwargs):
         super().__init__(value=float(value), *args, **kwargs)
 
-    def __float__(self):
-        return float(self._value)
+    def __eq__(self, other):
+        """Allow comparison against numbers"""
+        if isinstance(other, self.__class__):
+            return self._value == other._value
+        elif isinstance(other, numbers.Number):
+            return self._value == other
+        else:
+            return NotImplemented
+
+    def __hash__(self):
+        """Retain hashability"""
+        return hash(self._value)
+
+    def __lt__(self, other):
+        """Allow comparison against numbers"""
+        if isinstance(other, self.__class__):
+            return self._value < other._value
+        elif isinstance(other, numbers.Number):
+            return self._value < other
+        else:
+            return NotImplemented
 
 
 @LinearTime.link_duration_class()
-class LinearTimeDuration(Duration):
+class LinearTimeDuration(Duration, float):
+
+    def __new__(cls, *args, **kwargs):
+        return float.__new__(cls, *args, **kwargs)
 
     def __init__(self, value, *args, **kwargs):
         super().__init__(value=float(value), *args, **kwargs)
 
-    def __float__(self):
-        return float(self._value)
+    def __eq__(self, other):
+        """Allow comparison against numbers"""
+        if isinstance(other, self.__class__):
+            return self._value == other._value
+        elif isinstance(other, numbers.Number):
+            return self._value == other
+        else:
+            return NotImplemented
+
+    def __hash__(self):
+        """Retain hashability"""
+        return hash(self._value)
+
+    def __lt__(self, other):
+        """Allow comparison against numbers"""
+        if isinstance(other, self.__class__):
+            return self._value < other._value
+        elif isinstance(other, numbers.Number):
+            return self._value < other
+        else:
+            return NotImplemented
 
 
 class SpelledPitch(Pitch):

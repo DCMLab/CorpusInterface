@@ -1,5 +1,7 @@
 from CorpusInterface.datatypes import Event, Vector
+from CorpusInterface.readers import read_midi
 from CorpusInterface.midi import MIDINote
+import numpy as np
 
 
 def split_midi_by_parts(events):
@@ -75,3 +77,13 @@ def prange(start, stop, step=None, *, endpoint=False):
             break
         yield running
         running = running + step
+
+
+def pitch_class_counts(piece):
+    chordified = chordify(piece)
+    pitch_class_counts = np.zeros((len(chordified), 12))
+    for time_idx, event in enumerate(chordified):
+        for pitch in event.data:
+            pitch_class_counts[time_idx][int(pitch.to_pitch_class())] += 1
+    times = np.array([event.time for event in chordified] + [chordified[-1].time + chordified[-1].duration])
+    return pitch_class_counts, times

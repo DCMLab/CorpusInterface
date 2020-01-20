@@ -996,3 +996,12 @@ class Event:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(time={self.time}, duration={self.duration}, data={self.data})"
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and \
+               other.time == self.time and \
+               other.duration == self.duration and \
+               other.data == self.data
+
+    def __hash__(self):
+        return hash((self.time, self.duration, self.data))

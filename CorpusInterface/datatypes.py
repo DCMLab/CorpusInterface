@@ -440,6 +440,12 @@ class Pitch(Point):
         # convert to class if required
         return ret if not self.is_pitch_class() else ret.to_pitch_class()
 
+    def __lt__(self, other):
+        if self.is_pitch_class():
+            raise TypeError("Cannot compare pitch classes (cyclic order)")
+        else:
+            return super().__lt__(other)
+
     def is_pitch_class(self):
         return self._is_pitch_class
 
@@ -518,6 +524,12 @@ class Interval(Vector):
     def __mul__(self, other):
         ret = super().__mul__(other)
         return ret if not self.is_interval_class() else ret.to_interval_class()
+
+    def __lt__(self, other):
+        if self.is_interval_class():
+            raise TypeError("Cannot compare interval classes (cyclic order)")
+        else:
+            return super().__lt__(other)
 
     def is_interval_class(self):
         return self._is_interval_class

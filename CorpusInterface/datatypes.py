@@ -690,7 +690,14 @@ class SpelledPitch(Pitch):
         return np.array([value[0], 0])
 
     def __init__(self, value, *args, is_pitch_class=None, **kwargs):
-        Pitch._check_type(value, (str, np.ndarray, list, tuple), (Pitch,))
+        Pitch._check_type(value, (numbers.Number, str, np.ndarray, list, tuple), (Pitch,))
+        # int-values --> pitch class
+        if isinstance(value, numbers.Number):
+            if is_pitch_class is False:
+                raise ValueError(f"Initialisation with integer (value={value}) implies pitch class "
+                                 f"but 'is_pitch_class' was explicitly set to {is_pitch_class}")
+            value = [value, 0]
+            is_pitch_class = True
         # pre-process value
         if isinstance(value, str):
             str_value = value
@@ -733,6 +740,12 @@ class SpelledPitch(Pitch):
     def __repr__(self):
         return self.name()
 
+    def __int__(self):
+        if self.is_pitch_class():
+            return int(self._value[0])
+        else:
+            raise NotImplementedError
+
     def fifth_steps(self):
         return self._value[0]
 
@@ -756,12 +769,25 @@ class SpelledPitch(Pitch):
 @SpelledPitch.link_interval_class()
 class SpelledPitchInterval(Interval):
 
-    def __init__(self, value, *args, **kwargs):
-        Pitch._check_type(value, (numbers.Number,), (Interval,))
+    def __init__(self, value, is_interval_class=None, *args, **kwargs):
+        Pitch._check_type(value, (numbers.Number, np.ndarray, list, tuple), (Interval,))
+        # int-values --> interval class
+        if isinstance(value, numbers.Number):
+            if is_interval_class is False:
+                raise ValueError(f"Initialisation with integer (value={value}) implies interval class "
+                                 f"but 'is_interval_class' was explicitly set to {is_interval_class}")
+            value = [value, 0]
+            is_interval_class = True
         int_value = np.array(value, dtype=np.int)
         if not np.array_equal(int_value, value):
             raise ValueError(f"Expected integer values but got {value}")
-        super().__init__(value=int_value, *args, **kwargs)
+        super().__init__(value=int_value, is_interval_class=is_interval_class, *args, **kwargs)
+
+    def __int__(self):
+        if self.is_interval_class():
+            return int(self._value[0])
+        else:
+            raise NotImplementedError
 
 
 class EnharmonicPitch(Pitch):

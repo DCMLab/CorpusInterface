@@ -22,7 +22,7 @@ jobs:
         pip install -r requirements.txt
     - name: run tests
       run: |
-	pip install pytest
-	cd CorpusInterface/tests
+        pip install pytest
+        cd CorpusInterface/tests
         pytest-3
 

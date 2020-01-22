@@ -9,7 +9,7 @@ import unittest
 class TestChordify(TestCase):
 
     def test_chordify(self):
-        piece = read_midi('chordify_test.mid', quantise=1 / 32)
+        piece = read_midi('CorpusInterface/tests/chordify_test.mid', quantise=1 / 32)
         # for p in piece:
         #     print(p)
         # print("")

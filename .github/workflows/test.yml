@@ -23,6 +23,6 @@ jobs:
     - name: run tests
       run: |
         pip install pytest
-        cd CorpusInterface/tests
         pytest-3
+
 

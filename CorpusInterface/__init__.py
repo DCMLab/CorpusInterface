@@ -100,7 +100,7 @@ def download(*, name, index_path=None, root_dir=None):
     os.removedirs(tmp_dir)
 
 
-def load(name, index_path=None, root_dir=None, allow_download=False):
+def load(*,name, index_path=None, root_dir=None, allow_download=False):
     # We want the info from the child, but need to recurse through the
     # parents until we find the right directory
     temp_info = get_info(name=name, index_path=index_path)

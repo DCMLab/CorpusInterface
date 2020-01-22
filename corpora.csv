@@ -1,5 +1,5 @@
 Name,Parent,AccessMethod,URL,Root,CorpusType,RegEx,ContentType,Metadata
-testcorpus-git,,git,https://github.comDCMLab/corpusinterface-testcorpus.git,,,,,
+testcorpus-git,,git,https://github.com/DCMLab/corpusinterface-testcorpus.git,,,,,
 testcorpus-http,,zip,https://dcmlab.github.io/corpusinterface-testcorpus/test-corpus.zip,,,,,
 testcorpus-git-midi,testcorpus-git,,,directory_midi,files,.*,midi,
 testcorpus-http-midi,testcorpus-http,,,directory_midi,files,.*,midi,

@@ -3,7 +3,7 @@ from matplotlib.patches import Rectangle
 from CorpusInterface.util import split_midi_by_parts
 import numpy as np
 
-
+# Draw the events in a pianoroll notations
 def pianoroll(events, ax=None, show=False, **kwargs):
     # create axis if needed
     if ax is None:

@@ -2,7 +2,7 @@ import os
 import re
 from CorpusInterface import readers
 
-
+# A Document is a collection of musical events, and some metadata
 class Document:
 
     def metadata(self):
@@ -11,7 +11,7 @@ class Document:
     def __iter__(self):
         raise NotImplementedError
 
-
+# A Corpus is a collection of Documents, and some metadata
 class Corpus:
 
     def metadata(self):
@@ -20,7 +20,7 @@ class Corpus:
     def __iter__(self):
         raise NotImplementedError
 
-
+# A FileDocument is a concrete file on disk.
 class FileDocument(Document):
 
     def __init__(self, path, reader,**kwargs):
@@ -37,9 +37,12 @@ class FileDocument(Document):
     def __iter__(self):
         yield from self.reader(self.path,**self.kwargs)
 
-
+# A FileCorpus is a concrete directory containing files (possibly in
+# subdirectories), where each file as identified by the regex is a Document
+# in its own right
 class FileCorpus(Corpus):
 
+    # We allow for various ways to read metadata
     @staticmethod
     def choose_metadata_reader(metadata):
         if metadata.endswith(".txt"):
@@ -50,7 +53,8 @@ class FileCorpus(Corpus):
             return readers.read_tsv
         else:
             raise TypeError(f"Unsupported metadata format of file '{metadata}'")
-
+    
+    # As well as various ways to read the files themselves
     @staticmethod
     def choose_file_reader(file_specification):
         # The file type is the part before the first slash
@@ -73,6 +77,8 @@ class FileCorpus(Corpus):
         else:
             raise TypeError(f"Unsupported file format '{file_type}'")
 
+    # The user can provide their own readers (e.g. wrappers around Music21
+    # stuff or similar) if they wish.
     def __init__(self, path, metadata, file_type, file_regex=None, metadata_reader=None, file_reader=None):
         if metadata is not None:
             metadata_path = os.path.join(path, metadata)
@@ -106,3 +112,9 @@ class FileCorpus(Corpus):
 
     def metadata(self):
         return self.metadata_reader(self.metadata_path)
+
+#TODO: class JSONCorpus/JSONDocument
+
+#TODO: class APICorpus/APIDocument
+
+

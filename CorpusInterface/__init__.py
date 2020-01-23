@@ -21,6 +21,7 @@ def cwd(path):
     os.chdir(cwd)
 
 
+# Get the directory for a corpus.
 def get_dir(*, name, index_path=None, root_dir=None):
     # use default corpus root dir if not specified
     if root_dir is None:
@@ -40,12 +41,12 @@ def get_dir(*, name, index_path=None, root_dir=None):
         return Path(*get_dir(name=info['Parent'], index_path=index_path, root_dir=root_dir).parts,
                     *info['Root'].split("/"))
 
-
+# This loads and returns the corpora.csv data
 def get_list(index_path=None):
     return pd.read_csv(Path(*Path(os.path.abspath(__file__)).parts[:-2]) / "corpora.csv"
                        if index_path is None else index_path)
 
-
+# Get the relevant line of corpora.csv for the specified corpus, if it exists
 def get_info(*, name, index_path=None):
     corpora = get_list(index_path=index_path)
     hits = corpora[corpora['Name'] == name]
@@ -59,7 +60,7 @@ def get_info(*, name, index_path=None):
         # replace 'nan' values by proper None
         return {key: None if val == 'nan' else val for key, val in info.items()}
 
-
+# Download a specified corpus to disk. 
 def download(*, name, index_path=None, root_dir=None):
     info = get_info(name=name, index_path=index_path)
     print(f"Attempting to download corpus '{name}'")
@@ -99,7 +100,7 @@ def download(*, name, index_path=None, root_dir=None):
     # remove temporary directory
     os.removedirs(tmp_dir)
 
-
+# Load a specified, previously downloaded corpus 
 def load(*,name, index_path=None, root_dir=None, allow_download=False):
     # We want the info from the child, but need to recurse through the
     # parents until we find the right directory

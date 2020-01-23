@@ -29,9 +29,10 @@ jobs:
       env:
         ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
         PUBLISH_BRANCH: tested
-        SSH_DIR: "~/.ssh"
+        SSH_DIR: "/root/.ssh"
 #        PUBLISH_DIR: ./
       run: |
+        echo "${HOME}"
         mkdir "${SSH_DIR}"
         ssh-keyscan -t rsa github.com > "${SSH_DIR}/known_hosts"
         echo "${ACTIONS_DEPLOY_KEY}" > "${SSH_DIR}/id_rsa"

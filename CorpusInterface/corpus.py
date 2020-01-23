@@ -87,7 +87,7 @@ class FileCorpus(Corpus):
             self.metadata_reader = lambda *args, **kwargs: None
         self.document_list = []
         self.path = path
-        [self.file_reader, self.file_args] = FileCorpus.choose_file_reader(file_type) if file_reader is None else file_reader
+        [self.file_reader, self.file_args] = FileCorpus.choose_file_reader(file_type) if file_reader is None else [file_reader, None]
         # compile regex if provided
         if file_regex is not None:
             file_regex = re.compile(file_regex)

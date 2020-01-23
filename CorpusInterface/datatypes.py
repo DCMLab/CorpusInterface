@@ -220,6 +220,9 @@ class WrittenChord(Point):
       else:
         return self.root
 
+    def has_altered_bass(self):
+      return self.altered_bass != ""
+
 class Pitch(Point):
     """
     Base class for pitches. Pitch and Interval behave like Point and vector so we add renamed versions for:

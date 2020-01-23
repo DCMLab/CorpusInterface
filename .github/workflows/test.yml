@@ -32,8 +32,8 @@ jobs:
         PUBLISH_DIR: ./
 #      run: |
 #        git push --set-upstream origin master
-      with:
-        keepFiles: true
+#      with:
+#        keepFiles: true
 
 
 

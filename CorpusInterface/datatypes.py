@@ -178,6 +178,48 @@ class Vector:
         return self._point_class(self._value)
 
 
+class WrittenChord(Point):
+    """ Super simple class for handling written chords, as taken from e.g.
+        jazz lead sheets or harmonic annotations.
+
+        The properties are all provisional, and may be wrong depending on
+        the encoding. E.g. with the current regex, a chord written "Cmaj9"
+        would be interpreted to be "minor". TODO: Fix this.
+    """
+
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._value = value
+        regex = re.compile("([A-Ga-g][b#]?)([Mm%ø+-o]?)([^/]*)/?(.*)")
+        matches = regex.match(value)
+        self.root = matches.group(1)
+        self.triad = matches.group(2)
+        self.extension = matches.group(3)
+        self.altered_bass = matches.group(4)
+
+
+    def is_minor(self):
+      return (self.triad == "m" or 
+              self.triad == "-")
+
+    def is_dim_triad(self):
+      return (self.triad == "o" or
+              self.triad == "%" or
+              self.triad == "ø")
+
+    def is_aug_triad(self):
+      return self.triad == "+"
+
+    def is_major(self):
+      return (self.triad == "" or
+              self.triad == "M")
+
+    def bass_note(self):
+      if self.altered_bass != "":
+        return self.altered_bass
+      else:
+        return self.root
+
 class Pitch(Point):
     """
     Base class for pitches. Pitch and Interval behave like Point and vector so we add renamed versions for:

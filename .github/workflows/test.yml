@@ -25,13 +25,31 @@ jobs:
         pip install pytest
         pytest
     - name: deploy to master
-      uses: peaceiris/actions-gh-pages@v2.5.1
+#      uses: peaceiris/actions-gh-pages@v2.5.1
       env:
         ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
         PUBLISH_BRANCH: tested
-        PUBLISH_DIR: ./
-#      run: |
-#        git push --set-upstream origin master
+#        PUBLISH_DIR: ./
+      run: |
+        mkdir "${SSH_DIR}"
+	ssh-keyscan -t rsa github.com > "${SSH_DIR}/known_hosts"
+	echo "${ACTIONS_DEPLOY_KEY}" > "${SSH_DIR}/id_rsa"
+	chmod 400 "${SSH_DIR}/id_rsa"
+	if [[ -n "${INPUT_USERNAME}" ]]; then
+	    git config user.name "${INPUT_USERNAME}"
+	else
+	    git config user.name "${GITHUB_ACTOR}"
+	fi
+	if [[ -n "${INPUT_USEREMAIL}" ]]; then
+	    git config user.email "${INPUT_USEREMAIL}"
+	else
+	    git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+	fi
+        git checkout "${PUBLISH_BRANCH}"
+	git rebase testing
+	git remote rm origin || true
+	git remote add origin git@github.com:DCMLab/CorpusInterface.git
+	git push origin "${PUBLISH_BRANCH}"
 #      with:
 #        keepFiles: true
 

@@ -29,7 +29,7 @@ jobs:
       env:
         ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
         PUBLISH_BRANCH: tested
-	SSH_DIR: "~/.ssh"
+        SSH_DIR: "~/.ssh"
 #        PUBLISH_DIR: ./
       run: |
         mkdir "${SSH_DIR}"

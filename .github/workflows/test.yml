@@ -28,8 +28,10 @@ jobs:
       uses: peaceiris/actions-gh-pages@v2.5.1
       env:
         ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        PUBLISH_BRANCH: master
+        PUBLISH_BRANCH: tested
         PUBLISH_DIR: ./
+#      run: |
+#        git push --set-upstream origin master
       with:
         keepFiles: true
 

@@ -28,7 +28,7 @@ jobs:
 #      uses: peaceiris/actions-gh-pages@v2.5.1
       env:
         ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        PUBLISH_BRANCH: tested
+        PUBLISH_BRANCH: master
 #        PUBLISH_DIR: ./
       run: |
         SSH_DIR="${HOME}/.ssh"

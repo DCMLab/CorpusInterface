@@ -31,6 +31,9 @@ class TestURLTSVCorpus(TestCase):
   def test_load(self): 
     fc = ci.load(name="testcorpus-http-tsv")
 
+  def test_fail(self):
+    raise TypeError
+
 
 
 

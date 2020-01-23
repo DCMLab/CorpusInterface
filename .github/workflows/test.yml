@@ -3,7 +3,7 @@ name: Test
 on:
   push:
     branches:
-      - master
+      - testing
 
 jobs:
   build:
@@ -24,5 +24,14 @@ jobs:
       run: |
         pip install pytest
         pytest
+    - name: deploy to master
+      uses: peaceiris/actions-gh-pages@v2.5.1
+      env:
+        ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+        PUBLISH_BRANCH: master
+        PUBLISH_DIR: ./
+      with:
+        keepFiles: true
+
 
 

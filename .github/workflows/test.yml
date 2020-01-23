@@ -32,6 +32,7 @@ jobs:
 #        PUBLISH_DIR: ./
       run: |
         SSH_DIR="${HOME}/.ssh"
+	git status
         mkdir "${SSH_DIR}"
         ssh-keyscan -t rsa github.com > "${SSH_DIR}/known_hosts"
         echo "${ACTIONS_DEPLOY_KEY}" > "${SSH_DIR}/id_rsa"
@@ -47,7 +48,7 @@ jobs:
             git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
         fi
         git checkout "${PUBLISH_BRANCH}"
-        git merge testing
+        git merge origin/testing
         git remote rm origin || true
         git remote add origin git@github.com:DCMLab/CorpusInterface.git
         git push origin "${PUBLISH_BRANCH}"

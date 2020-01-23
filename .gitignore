@@ -10,3 +10,9 @@ corpora/**
 
 # mac os related
 .DS_Store
+
+# vim related
+*.swp
+*.swo
+*.swm
+*.swn

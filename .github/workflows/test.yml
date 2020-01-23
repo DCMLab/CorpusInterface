@@ -32,7 +32,7 @@ jobs:
 #        PUBLISH_DIR: ./
       run: |
         SSH_DIR="${HOME}/.ssh"
-	git status
+        git status
         mkdir "${SSH_DIR}"
         ssh-keyscan -t rsa github.com > "${SSH_DIR}/known_hosts"
         echo "${ACTIONS_DEPLOY_KEY}" > "${SSH_DIR}/id_rsa"

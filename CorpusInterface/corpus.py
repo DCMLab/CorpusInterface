@@ -56,31 +56,28 @@ class FileCorpus(Corpus):
     
     # As well as various ways to read the files themselves
     @staticmethod
-    def choose_file_reader(file_specification):
-        # The file type is the part before the first slash
-        file_type = file_specification.split("/")[0]
-        # After which optional arguments are given between further slashes,
-        # with equals signs delineating between key and value
-        # TODO allow key-only arguments
-        file_args = dict([x.split("=") for x in file_specification.split("/")[1:]])
+    def choose_file_reader(file_type):
 
 
 
         if file_type == "txt":
-            return [readers.read_txt, file_args]
+            return readers.read_txt
         elif file_type == "csv":
-            return [readers.read_csv, file_args]
+            return readers.read_csv
         elif file_type == "tsv":
-            return [readers.read_tsv, file_args]
+            return readers.read_tsv
         elif file_type == "midi":
-            return [readers.read_midi, file_args]
+            return readers.read_midi
         else:
             raise TypeError(f"Unsupported file format '{file_type}'")
 
     # The user can provide their own readers (e.g. wrappers around Music21
     # stuff or similar) if they wish.
-    def __init__(self, path, metadata, file_type, file_regex=None, metadata_reader=None, file_reader=None):
-        if metadata is not None:
+    def __init__(self, path, parameters, metadata_reader=None, file_reader=None):
+        # Extract the parameters
+        self.parameter_dict = dict(map(lambda x : x.split("="), parameters.split("/")))
+
+        if self.parameter_dict.get('metadata') is not None:
             metadata_path = os.path.join(path, metadata)
             if os.path.isfile(metadata_path):
                 self.metadata_path = metadata_path
@@ -93,16 +90,16 @@ class FileCorpus(Corpus):
             self.metadata_reader = lambda *args, **kwargs: None
         self.document_list = []
         self.path = path
-        [self.file_reader, self.file_args] = FileCorpus.choose_file_reader(file_type) if file_reader is None else [file_reader, None]
+        self.file_reader = FileCorpus.choose_file_reader(self.parameter_dict.get('file_type')) if file_reader is None else file_reader
         # compile regex if provided
-        if file_regex is not None:
-            file_regex = re.compile(file_regex)
+        if self.parameter_dict.get('file_regex') is not None:
+            self.file_regex = re.compile(self.parameter_dict.get('file_regex'))
         # walk through tree
         for root, dirs, files in os.walk(path):
             for file in files:
                 # only take matching files
-                if file_regex is None or file_regex.match(file):
-                    self.document_list.append(FileDocument(os.path.join(root, file), self.file_reader, **self.file_args))
+                if self.file_regex is None or self.file_regex.match(file):
+                    self.document_list.append(FileDocument(os.path.join(root, file), self.file_reader, **self.parameter_dict))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.path})"

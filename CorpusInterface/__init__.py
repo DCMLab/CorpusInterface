@@ -119,9 +119,6 @@ def load(*,name, index_path=None, root_dir=None, allow_download=False):
     # corpus though
     corpus_dir = get_dir(name=name, index_path=index_path, root_dir=root_dir)
     if corpus_info['CorpusType'] == "files":
-        return FileCorpus(path=corpus_dir,
-                          metadata=corpus_info['Metadata'],
-                          file_type=corpus_info['ContentType'],
-                          file_regex=corpus_info['RegEx'])
+        return FileCorpus(path=corpus_dir,parameters=corpus_info['Parameters'])
     else:
         raise TypeError(f"Unsupported corpus type '{corpus_info['CorpusType']}'")

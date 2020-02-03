@@ -22,9 +22,9 @@ def read_tsv(path, *args, **kwargs):
 
     stdata = pd.read_csv(path, sep='\t')
     for key in kwargs:
-      if key == "time":
+      if key == "tsv_time":
         time_col = kwargs[key]
-      if key == "duration":
+      if key == "tsv_duration":
         duration_col = kwargs[key]
     for row in stdata.iterrows():
       [index, data] = row

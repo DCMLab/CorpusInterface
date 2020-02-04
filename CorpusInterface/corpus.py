@@ -60,8 +60,6 @@ class FileCorpus(Corpus):
     @staticmethod
     def choose_file_reader(file_type):
 
-
-
         if file_type == "txt":
             return readers.read_txt
         elif file_type == "csv":
@@ -75,7 +73,7 @@ class FileCorpus(Corpus):
 
     # The user can provide their own readers (e.g. wrappers around Music21
     # stuff or similar) if they wish.
-    def __init__(self, path, parameters, metadata_reader=None, file_reader=None):
+    def __init__(self, path, parameters, **kwargs):# metadata_reader=None, file_reader=None):
         # Extract the parameters
         self.parameter_dict = dict(map(lambda x : x.split("="), parameters.split("/")))
 
@@ -84,7 +82,7 @@ class FileCorpus(Corpus):
             if os.path.isfile(metadata_path):
                 self.metadata_path = metadata_path
                 self.metadata_reader = \
-                    FileCorpus.choose_metadata_reader(metadata) if metadata_reader is None else metadata_reader
+                    FileCorpus.choose_metadata_reader(metadata) if kwargs.get('metadata_reader') is None else kwargs.get('metadata_reader')
             else:
                 raise FileNotFoundError(f"Could not find metadata file at '{metadata_path}'")
         else:
@@ -92,7 +90,7 @@ class FileCorpus(Corpus):
             self.metadata_reader = lambda *args, **kwargs: None
         self.document_list = []
         self.path = path
-        self.file_reader = FileCorpus.choose_file_reader(self.parameter_dict.get('file_type')) if file_reader is None else file_reader
+        self.file_reader = FileCorpus.choose_file_reader(self.parameter_dict.get('file_type')) if kwargs.get('file_reader') is None else kwargs.get('file_reader')
         # compile regex if provided
         if self.parameter_dict.get('file_regex') is not None:
             self.file_regex = re.compile(self.parameter_dict.get('file_regex'))
@@ -101,7 +99,7 @@ class FileCorpus(Corpus):
             for file in files:
                 # only take matching files
                 if self.file_regex is None or self.file_regex.match(file):
-                    self.document_list.append(FileDocument(os.path.join(root, file), self.file_reader, **self.parameter_dict))
+                    self.document_list.append(FileDocument(os.path.join(root, file), self.file_reader, **self.parameter_dict, **kwargs))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.path})"
@@ -112,7 +110,7 @@ class FileCorpus(Corpus):
     def metadata(self):
         return self.metadata_reader(self.metadata_path)
 
-#TODO: class JSONCorpus/JSONDocument
+# A JSONDocument is a slice of a one-file JSON Corpus
 
 class JSONCorpus(Corpus):
 
@@ -129,7 +127,7 @@ class JSONCorpus(Corpus):
             raise TypeError(f"Unsupported metadata format of file '{metadata}'")
 
 
-    def __init__(self, path, parameters, json_file = None, metadata_reader = None, json_reader = None, document_reader=None):
+    def __init__(self, path, parameters, **kwargs ):#json_file = None, metadata_reader = None, json_reader = None, document_reader=None):
         #TODO: Extract this into a superclass?
         self.parameter_dict = dict(map(lambda x : x.split("="), parameters.split("/")))
 
@@ -137,8 +135,7 @@ class JSONCorpus(Corpus):
             metadata_path = os.path.join(path, metadata)
             if os.path.isfile(metadata_path):
                 self.metadata_path = metadata_path
-                self.metadata_reader = \
-                    FileCorpus.choose_metadata_reader(metadata) if metadata_reader is None else metadata_reader
+                self.metadata_reader = (lambda x : x) if kwargs.get('metadata_reader') is None else kwargs.get('metadata_reader')#if metadata_reader is None else metadata_reader
             else:
                 raise FileNotFoundError(f"Could not find metadata file at '{metadata_path}'")
         else:
@@ -147,17 +144,18 @@ class JSONCorpus(Corpus):
         self.document_list = []
         self.path = path
 
-        self.json_file = self.parameter_dict.get('json_file') if json_file is None else json_file
+        self.json_file = self.parameter_dict.get('json_file') if kwargs.get('json_file') is None else kwargs.get('json_file')
 
         with open(os.path.join(self.path,self.json_file), 'r') as f:
            self.json_data = json.load(f)
         
-        if json_reader is not None:
+        if kwargs.get('json_reader') is not None:
+           json_reader = kwargs['json_reader']
            self.document_list = json_reader(json_data=self.json_data, **self.parameter_dict)
            return
 
-        if document_reader is not None:
-           self.document_reader = document_reader
+        if kwargs.get('document_reader') is not None:
+           self.document_reader = kwargs['document_reader']
         else:
            self.document_reader = lambda x : x
         
@@ -168,7 +166,6 @@ class JSONCorpus(Corpus):
 
         self.document_list = map(lambda x : x.value, self.json_expr.find(self.json_data))
         self.document_list = map(self.document_reader, self.document_list)
-
 
 
     def __iter__(self):

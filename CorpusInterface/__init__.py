@@ -10,7 +10,7 @@ import tarfile
 import zipfile
 import logging
 
-from CorpusInterface.corpus import FileCorpus
+from CorpusInterface.corpus import FileCorpus, JSONCorpus
 
 
 @contextmanager
@@ -101,7 +101,7 @@ def download(*, name, index_path=None, root_dir=None):
     os.removedirs(tmp_dir)
 
 # Load a specified, previously downloaded corpus 
-def load(*,name, index_path=None, root_dir=None, allow_download=False):
+def load(*,name, index_path=None, root_dir=None, allow_download=False, **kwargs):
     # We want the info from the child, but need to recurse through the
     # parents until we find the right directory
     temp_info = get_info(name=name, index_path=index_path)
@@ -119,6 +119,8 @@ def load(*,name, index_path=None, root_dir=None, allow_download=False):
     # corpus though
     corpus_dir = get_dir(name=name, index_path=index_path, root_dir=root_dir)
     if corpus_info['CorpusType'] == "files":
-        return FileCorpus(path=corpus_dir,parameters=corpus_info['Parameters'])
+        return FileCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
+    elif corpus_info['CorpusType'] == "json":
+        return JSONCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
     else:
         raise TypeError(f"Unsupported corpus type '{corpus_info['CorpusType']}'")

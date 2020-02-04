@@ -21,11 +21,10 @@ def read_tsv(path, *args, **kwargs):
     events = []
 
     stdata = pd.read_csv(path, sep='\t')
-    for key in kwargs:
-      if key == "tsv_time":
-        time_col = kwargs[key]
-      if key == "tsv_duration":
-        duration_col = kwargs[key]
+    if kwargs.get('tsv_time') is not None:
+      time_col = kwargs['tsv_time']
+    if kwargs.get('tsv_duration') is not None:
+      duration_col = kwargs['tsv_duration']
     for row in stdata.iterrows():
       [index, data] = row
       time = index
@@ -37,6 +36,8 @@ def read_tsv(path, *args, **kwargs):
       events.append(Event(data=data,time=LinearTime(time),duration=LinearTimeDuration(duration)))
     
     return list(events)
+
+
 
 
 def read_midi_mido(path, raw=False, quantise=None, time_sig=False, tempo=False, as_enharmonic=False, *args, **kwargs):

@@ -22,6 +22,9 @@ class TestGitMIDICorpus(TestCase):
     
   def test_load(self): 
     fc = ci.load(name="testcorpus-git-midi")
+    assert(len(fc.document_list) == 1)
+    assert(list(fc.document_list[0].__iter__())[0].data.velocity == 80)
+
 
 class TestURLTSVCorpus(TestCase):
 
@@ -30,6 +33,8 @@ class TestURLTSVCorpus(TestCase):
     
   def test_load(self): 
     fc = ci.load(name="testcorpus-http-tsv")
+    assert(len(fc.document_list) == 1)
+    assert(list(fc.document_list[0].__iter__())[0].duration.real == 2.5)
 
 
 

@@ -5,6 +5,7 @@ testcorpus-git-midi,testcorpus-git,,,directory_midi,files,file_regex=.*/file_typ
 testcorpus-http-midi,testcorpus-http,,,directory_midi,files,file_regex=.*/file_type=midi
 testcorpus-git-tsv,testcorpus-git,,,directory_tsv,files,file_regex=.*/file_type=tsv/tsv_time=totbeat/tsv_duration=length
 testcorpus-http-tsv,testcorpus-http,,,directory_tsv,files,file_regex=.*/file_type=tsv/tsv_time=totbeat/tsv_duration=length
+testcorpus-git-json,testcorpus-git,,,directory_json,json,json_file=treebank.json
 ABC,,git,git@github.com:DCMLab/ABC.git,,
 ABC_labels,ABC,,,data/tsv,files,file_regex=^.*\.tsv$/file_type=tsv/tsv_time=totbeat/tsv_duration=length
 ABC_scores,ABC,,,data/mscx,files,file_regex=^.*\.mscx$/file_type=mscx

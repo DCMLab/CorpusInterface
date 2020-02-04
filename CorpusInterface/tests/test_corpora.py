@@ -36,7 +36,22 @@ class TestURLTSVCorpus(TestCase):
     assert(len(fc.document_list) == 1)
     assert(list(fc.document_list[0].__iter__())[0].duration.real == 2.5)
 
+class TestGITJSONCorpus(TestCase):
 
+  def combine_data(self,zipp, meter):
+    return ci.datatypes.Event(ci.datatypes.LinearTime(zipp[1] * meter + zipp[2]), None, zipp[0]) 
+
+  def extract_chords(self,json):
+    meter = json['meter']['numerator'] / json['meter']['denominator']
+    zipped = zip(json['chords'], json['measures'], json['beats'])
+    return map(lambda x : self.combine_data(x, meter), zipped)
+    
+
+  def test_load(self):
+    jc = ci.load(name="testcorpus-git-json", document_reader=self.extract_chords, allow_download=True)
+    document_list = list(jc.document_list)
+    assert(len(document_list) == 1)
+    assert(list(document_list[0].__iter__())[0].data == "D7")
 
 
 

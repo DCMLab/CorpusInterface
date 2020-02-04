@@ -1,5 +1,7 @@
 import os
 import re
+import json
+import jsonpath_ng
 from CorpusInterface import readers
 
 # A Document is a collection of musical events, and some metadata
@@ -111,6 +113,72 @@ class FileCorpus(Corpus):
         return self.metadata_reader(self.metadata_path)
 
 #TODO: class JSONCorpus/JSONDocument
+
+class JSONCorpus(Corpus):
+
+    # We allow for various ways to read metadata
+    @staticmethod
+    def choose_metadata_reader(metadata):
+        if metadata.endswith(".txt"):
+            return readers.read_txt
+        elif metadata.endswith(".csv"):
+            return readers.read_csv
+        elif metadata.endswith(".tsv"):
+            return readers.read_tsv
+        else:
+            raise TypeError(f"Unsupported metadata format of file '{metadata}'")
+
+
+    def __init__(self, path, parameters, json_file = None, metadata_reader = None, json_reader = None, document_reader=None):
+        #TODO: Extract this into a superclass?
+        self.parameter_dict = dict(map(lambda x : x.split("="), parameters.split("/")))
+
+        if self.parameter_dict.get('metadata') is not None:
+            metadata_path = os.path.join(path, metadata)
+            if os.path.isfile(metadata_path):
+                self.metadata_path = metadata_path
+                self.metadata_reader = \
+                    FileCorpus.choose_metadata_reader(metadata) if metadata_reader is None else metadata_reader
+            else:
+                raise FileNotFoundError(f"Could not find metadata file at '{metadata_path}'")
+        else:
+            self.metadata_path = None
+            self.metadata_reader = lambda *args, **kwargs: None
+        self.document_list = []
+        self.path = path
+
+        self.json_file = self.parameter_dict.get('json_file') if json_file is None else json_file
+
+        with open(os.path.join(self.path,self.json_file), 'r') as f:
+           self.json_data = json.load(f)
+        
+        if json_reader is not None:
+           self.document_list = json_reader(json_data=self.json_data, **self.parameter_dict)
+           return
+
+        if document_reader is not None:
+           self.document_reader = document_reader
+        else:
+           self.document_reader = lambda x : x
+        
+        if self.parameter_dict.get('json_list_of_documents') is not None:
+           self.json_expr = jsonpath_ng.parse(self.parameter_dict.get('json_list_of_documents'))
+        else:
+           self.json_expr = jsonpath_ng.parse("$[*]")
+
+        self.document_list = map(lambda x : x.value, self.json_expr.find(self.json_data))
+        self.document_list = map(self.document_reader, self.document_list)
+
+
+
+    def __iter__(self):
+      yield from self.document_list
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.path})"
+
+    def metadata(self):
+        return self.metadata_reader(self.metadata_path)
 
 #TODO: class APICorpus/APIDocument
 

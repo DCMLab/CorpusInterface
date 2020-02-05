@@ -175,7 +175,7 @@ class JSONCorpus(Corpus):
         return f"{self.__class__.__name__}({self.path})"
 
     def metadata(self):
-        return self.metadata_reader(self.metadata_path)
+        return "JSON"
 
 #TODO: class APICorpus/APIDocument
 

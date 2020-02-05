@@ -38,7 +38,22 @@ def read_tsv(path, *args, **kwargs):
     return list(events)
 
 
+def read_humdrum_music21(path, *args, **kwargs):
+    events = []
+    piece = music21.converter.parse(path)
+    for part_id, part in enumerate(piece.parts):
+        for note in part.flat.notes:
+            if isinstance(note, (music21.note.Note, music21.chord.Chord)):
+                for pitch in note.pitches:
+                    events.append(Event(data=EnharmonicPitch(value=pitch.ps),
+                                        time=LinearTime(note.offset),
+                                        duration=LinearTimeDuration(note.duration.quarterLength)))
+            else:
+                raise Warning(f"Encountered unknown Humdrum stream object {note} (type: {type(note)}) "
+                              f"while reading file '{path}'")
+    return list(sorted(events, key=lambda e: e.time))
 
+read_humdrum = read_humdrum_music21
 
 def read_midi_mido(path, raw=False, quantise=None, time_sig=False, tempo=False, as_enharmonic=False, *args, **kwargs):
     mid = mido.MidiFile(path)

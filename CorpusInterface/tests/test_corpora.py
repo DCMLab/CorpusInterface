@@ -59,7 +59,7 @@ class TestGITCSVCorpus(TestCase):
     jc = ci.load(name="testcorpus-git-csv", allow_download=True)
     document_list = list(jc.document_list)
     assert(len(document_list) == 1)
-    assert(list(document_list[0][1]['chord'][0] == "D")
+    assert(document_list[0][1]['chord'][0] == "D")
 
 
 

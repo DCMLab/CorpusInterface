@@ -32,7 +32,7 @@ def get_dir(*, name, index_path=None, root_dir=None):
     if info['Parent'] is None:
         # return
         if info['Root'] is not None:
-            return Path(*root_dir.parts, *info['Root'].split("/"))
+            return Path(*root_dir.parts, info['Name'], *info['Root'].split("/"))
         else:
             return Path(*root_dir.parts, info['Name'])
     else:
@@ -67,7 +67,11 @@ def download(*, name, index_path=None, root_dir=None):
     while info['Parent'] is not None:
         logging.info(f"Delegating dowload to parent corpus {info['Parent']}")
         info = get_info(name=info['Parent'], index_path=index_path)
-    corpus_dir = get_dir(name=info['Name'], index_path=index_path, root_dir=root_dir)
+    # use default corpus root dir if not specified
+    if root_dir is None:
+        root_dir = Path(*Path(os.path.abspath(__file__)).parts[:-2]) / "corpora"
+    # The directory target is just the name of the corpus
+    corpus_dir = Path(*root_dir.parts, info['Name'])
     if os.path.isdir(corpus_dir):
         raise Warning(f"Corpus directory '{corpus_dir}' exists. Aborting download.")
     # make temprary directory and clone in there
@@ -75,8 +79,8 @@ def download(*, name, index_path=None, root_dir=None):
     os.makedirs(tmp_dir)
     with cwd(tmp_dir):
         if info['AccessMethod'] == 'git':
-	    #TODO: This should be done with a proper git library for better
-	    #      error messages and tracking etc.
+            #TODO: This should be done with a proper git library for better
+            #      error messages and tracking etc.
             subprocess.run(["git", "clone", info['URL']])
             subdirs = next(os.walk(os.getcwd()))[1]
             if len(subdirs) > 1:

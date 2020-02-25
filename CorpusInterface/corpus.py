@@ -2,6 +2,7 @@ import os
 import re
 import json
 import jsonpath_ng
+import pandas as pd
 from CorpusInterface import readers
 
 # A Document is a collection of musical events, and some metadata
@@ -176,6 +177,82 @@ class JSONCorpus(Corpus):
 
     def metadata(self):
         return "JSON"
+
+class CSVCorpus(Corpus):
+
+    # We allow for various ways to read metadata
+    @staticmethod
+    def choose_metadata_reader(metadata):
+        if metadata.endswith(".txt"):
+            return readers.read_txt
+        elif metadata.endswith(".csv"):
+            return readers.read_csv
+        elif metadata.endswith(".tsv"):
+            return readers.read_tsv
+        else:
+            raise TypeError(f"Unsupported metadata format of file '{metadata}'")
+
+
+    def __init__(self, path, parameters, **kwargs ):#json_file = None, metadata_reader = None, json_reader = None, document_reader=None):
+        #TODO: Extract this into a superclass?
+        self.parameter_dict = dict(map(lambda x : x.split("="), parameters.split("/")))
+
+        if self.parameter_dict.get('metadata') is not None:
+            metadata_path = os.path.join(path, metadata)
+            if os.path.isfile(metadata_path):
+                self.metadata_path = metadata_path
+                self.metadata_reader = (lambda x : x) if kwargs.get('metadata_reader') is None else kwargs.get('metadata_reader')#if metadata_reader is None else metadata_reader
+            else:
+                raise FileNotFoundError(f"Could not find metadata file at '{metadata_path}'")
+        else:
+            self.metadata_path = None
+            self.metadata_reader = lambda *args, **kwargs: None
+        self.document_list = []
+        self.path = path
+
+        self.csv_file = self.parameter_dict.get('csv_file') if kwargs.get('csv_file') is None else kwargs.get('csv_file')
+        self.csv_sep = self.parameter_dict.get('csv_sep') if kwargs.get('csv_sep') is None else kwargs.get('csv_sep')
+
+        if (self.csv_sep is None):
+           self.csv_sep = ","
+
+        self.csv_comment = self.parameter_dict.get('csv_comment') if kwargs.get('csv_comment') is None else kwargs.get('csv_comment')
+
+
+        with open(os.path.join(self.path,self.csv_file), 'r') as f:
+           self.csv_data = pd.read_csv(f, sep = self.csv_sep, comment = self.csv_comment)
+
+        if kwargs.get('csv_reader') is not None:
+           csv_reader = kwargs['csv_reader']
+           self.document_list = csv_reader(csv_data=self.csv_data, **self.parameter_dict)
+           return
+
+        if kwargs.get('document_reader') is not None:
+           self.document_reader = kwargs['document_reader']
+        else:
+           self.document_reader = lambda x : x
+
+        if self.parameter_dict.get('csv_documents_are_rows') is not None:
+           self.csv_by_row = True
+           self.document_list = self.csv_data.values
+        elif  self.parameter_dict.get('csv_group_by_column') is not None:
+           self.csv_column = self.parameter_dict.get('csv_group_by_column')
+           self.document_list = self.csv_data.groupby(self.csv_column)
+        else:
+          raise TypeError(f"No explicit identification of documents in CSV")
+          return
+
+        self.document_list = map(self.document_reader, self.document_list)
+
+
+    def __iter__(self):
+      yield from self.document_list
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.path})"
+
+    def metadata(self):
+        return "CSV"
 
 #TODO: class APICorpus/APIDocument
 

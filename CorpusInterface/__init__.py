@@ -10,7 +10,7 @@ import tarfile
 import zipfile
 import logging
 
-from CorpusInterface.corpus import FileCorpus, JSONCorpus
+from CorpusInterface.corpus import FileCorpus, JSONCorpus, CSVCorpus
 
 
 @contextmanager
@@ -126,5 +126,7 @@ def load(*,name, index_path=None, root_dir=None, allow_download=False, **kwargs)
         return FileCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
     elif corpus_info['CorpusType'] == "json":
         return JSONCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
+    elif corpus_info['CorpusType'] == "csv":
+        return CSVCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
     else:
         raise TypeError(f"Unsupported corpus type '{corpus_info['CorpusType']}'")

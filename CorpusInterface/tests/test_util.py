@@ -9,7 +9,7 @@ import unittest
 class TestChordify(TestCase):
 
     def test_chordify(self):
-        piece = read_midi('CorpusInterface/tests/chordify_test.mid', quantise=1 / 32)
+        piece = read_midi('./chordify_test.mid', quantise=1 / 32)
         # for p in piece:
         #     print(p)
         # print("")
@@ -17,9 +17,12 @@ class TestChordify(TestCase):
         # for c in chordified_piece:
         #     print(c)
         # print("")
-        self.assertEqual(len(chordified_piece), 5)
-        self.assertEqual([float(e.time) for e in chordified_piece], [0., 1., 2., 3.5, 3.75])
-        self.assertEqual([float(e.duration) for e in chordified_piece], [1., 1., 1.5, 0.25, 6.25])
+        self.assertEqual(len(chordified_piece), 9)
+        self.assertEqual([float(e.time) for e in chordified_piece], [0., 1., 2., 3.5, 3.75, 10, 12, 13, 14])
+        self.assertEqual([float(e.duration) for e in chordified_piece], [1., 1., 1.5, 0.25, 6.25, 2, 1, 1, 1])
+        self.assertEqual([list(sorted([int(p) for p in e.data])) for e in chordified_piece], [
+            [69], [76], [71, 76], [76, 77], [76], [], [60, 60], [60], [60, 60]
+        ])
 
 
 class TestLinspace(TestCase):

@@ -87,3 +87,22 @@ def pitch_class_counts(piece):
             pitch_class_counts[time_idx][int(pitch.to_pitch_class())] += 1
     times = np.array([event.time for event in chordified] + [chordified[-1].time + chordified[-1].duration])
     return pitch_class_counts, times
+
+
+def binned_counts(pitch_class_counts, times, bin_width=1, normalise=False):
+    # initialise bins
+    binned_counts = np.zeros((int(np.ceil(times.max() / bin_width)), pitch_class_counts.shape[1]))
+    binned_times = np.array(list(range(binned_counts.shape[0] + 1))) * bin_width
+
+    # add events to correct bin (overlapping events end up in start bin)
+    for d, start, end in zip(pitch_class_counts, times[:-1], times[1:]):
+        measure_index = int(np.floor(start / bin_width))
+        binned_counts[measure_index] += d * (end - start)
+
+    # normalise
+    if normalise:
+        binned_count_sums = binned_counts.sum(axis=1)
+        non_zero = binned_count_sums > 0
+        binned_counts[non_zero] = binned_counts[non_zero] / binned_count_sums[non_zero, None]
+
+    return binned_counts, binned_times

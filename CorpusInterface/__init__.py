@@ -10,7 +10,7 @@ import tarfile
 import zipfile
 import logging
 
-from CorpusInterface.corpus import FileCorpus
+from CorpusInterface.corpus import FileCorpus, JSONCorpus, CSVCorpus
 
 
 @contextmanager
@@ -32,7 +32,7 @@ def get_dir(*, name, index_path=None, root_dir=None):
     if info['Parent'] is None:
         # return
         if info['Root'] is not None:
-            return Path(*root_dir.parts, *info['Root'].split("/"))
+            return Path(*root_dir.parts, info['Name'], *info['Root'].split("/"))
         else:
             return Path(*root_dir.parts, info['Name'])
     else:
@@ -67,7 +67,11 @@ def download(*, name, index_path=None, root_dir=None):
     while info['Parent'] is not None:
         logging.info(f"Delegating dowload to parent corpus {info['Parent']}")
         info = get_info(name=info['Parent'], index_path=index_path)
-    corpus_dir = get_dir(name=info['Name'], index_path=index_path, root_dir=root_dir)
+    # use default corpus root dir if not specified
+    if root_dir is None:
+        root_dir = Path(*Path(os.path.abspath(__file__)).parts[:-2]) / "corpora"
+    # The directory target is just the name of the corpus
+    corpus_dir = Path(*root_dir.parts, info['Name'])
     if os.path.isdir(corpus_dir):
         raise Warning(f"Corpus directory '{corpus_dir}' exists. Aborting download.")
     # make temprary directory and clone in there
@@ -75,8 +79,8 @@ def download(*, name, index_path=None, root_dir=None):
     os.makedirs(tmp_dir)
     with cwd(tmp_dir):
         if info['AccessMethod'] == 'git':
-	    #TODO: This should be done with a proper git library for better
-	    #      error messages and tracking etc.
+            #TODO: This should be done with a proper git library for better
+            #      error messages and tracking etc.
             subprocess.run(["git", "clone", info['URL']])
             subdirs = next(os.walk(os.getcwd()))[1]
             if len(subdirs) > 1:
@@ -101,7 +105,7 @@ def download(*, name, index_path=None, root_dir=None):
     os.removedirs(tmp_dir)
 
 # Load a specified, previously downloaded corpus 
-def load(*,name, index_path=None, root_dir=None, allow_download=False):
+def load(*,name, index_path=None, root_dir=None, allow_download=False, **kwargs):
     # We want the info from the child, but need to recurse through the
     # parents until we find the right directory
     temp_info = get_info(name=name, index_path=index_path)
@@ -119,9 +123,10 @@ def load(*,name, index_path=None, root_dir=None, allow_download=False):
     # corpus though
     corpus_dir = get_dir(name=name, index_path=index_path, root_dir=root_dir)
     if corpus_info['CorpusType'] == "files":
-        return FileCorpus(path=corpus_dir,
-                          metadata=corpus_info['Metadata'],
-                          file_type=corpus_info['ContentType'],
-                          file_regex=corpus_info['RegEx'])
+        return FileCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
+    elif corpus_info['CorpusType'] == "json":
+        return JSONCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
+    elif corpus_info['CorpusType'] == "csv":
+        return CSVCorpus(path=corpus_dir,parameters=corpus_info['Parameters'], **kwargs)
     else:
         raise TypeError(f"Unsupported corpus type '{corpus_info['CorpusType']}'")

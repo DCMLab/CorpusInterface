@@ -2,6 +2,7 @@ import re
 import numpy as np
 import numbers
 from functools import total_ordering
+from enum import Enum
 
 
 @total_ordering
@@ -1030,6 +1031,23 @@ class LogFreqPitchInterval(Interval):
 
     def __repr__(self):
         return f"{np.format_float_positional(self.ratio(), fractional=True, precision=3)}"
+
+
+class Tie(Enum):
+    NONE = None
+    STOP = 1
+    CONTINUED = 2
+    START = 3
+
+
+class Note:
+
+    def __init__(self, pitch, tie=Tie.NONE):
+        self.pitch = pitch
+        self.tie = tie
+
+    def __repr__(self):
+        return f"{self.pitch} [{self.tie}]"
 
 
 class Event:

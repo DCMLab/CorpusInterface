@@ -10,7 +10,7 @@ import tarfile
 import zipfile
 import logging
 
-from CorpusInterface.corpus import FileCorpus, JSONCorpus, CSVCorpus
+from CorpusInterface.corpus_ import FileCorpus, JSONCorpus, CSVCorpus
 
 
 @contextmanager

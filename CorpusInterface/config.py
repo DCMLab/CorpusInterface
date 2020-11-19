@@ -11,26 +11,88 @@ __all__ = []
 _DEFAULT = "DEFAULT"
 
 # configuration
-_config = configparser.ConfigParser(allow_no_value=True,
-                                    interpolation=configparser.ExtendedInterpolation(),
-                                    default_section=_DEFAULT)
+config = configparser.ConfigParser(allow_no_value=True,
+                                   interpolation=configparser.ExtendedInterpolation(),
+                                   default_section=_DEFAULT)
 
 
 def load_config(*args, **kwargs):
-    _config.read(*args, **kwargs)
+    config.read(*args, **kwargs)
 
 
-def get(corpus, field):
-    return _config[corpus][field]
+def _corpus_to_str(corpus):
+    if not isinstance(corpus, str):
+        warn(f"corpus '{corpus}' is not a string and will be converted",
+             RuntimeWarning)
+        corpus = str(corpus)
+    return corpus
+
+
+def _key_to_str(key):
+    if not isinstance(key, str):
+        warn(f"key '{key}' is not a string and will be converted (note that keys are case insensitive)",
+             RuntimeWarning)
+        key = str(key)
+    return key
+
+
+def _value_to_str(value):
+    if value is not None and not isinstance(value, str):
+        warn(f"value '{value}' is not a string and will be converted",
+             RuntimeWarning)
+        value = str(value)
+    return value
+
+
+def iterate_corpus(corpus):
+    for key, val in config[_corpus_to_str(corpus)].items():
+        if key == "info":
+            yield key, get_info(corpus)
+        elif key == "root":
+            yield key, get_root(corpus)
+        elif key == "path":
+            yield key, get_path(corpus)
+        else:
+            yield key, val
+
+
+def getboolean(value):
+    str_value = str(value).lower()
+    if str_value in ['1', 'yes', 'true', 'on']:
+        return True
+    elif str_value in ['0', 'no', 'false', 'off']:
+        return False
+    else:
+        raise ValueError(f"Could not convert value '{value}' to bool.")
+
+
+def get(corpus, key=None):
+    if key is None:
+        return iterate_corpus(corpus)
+    else:
+        return config[_corpus_to_str(corpus)][_key_to_str(key)]
 
 
 def set(corpus, key=None, value=None):
     if key is None and value is not None:
         raise ValueError("Cannot set value without key")
+    corpus = _corpus_to_str(corpus)
     if key is None:
-        _config[corpus] = {}
+        if corpus in config:
+            warn(f"Corpus '{corpus}' already exists and will be reset", RuntimeWarning)
+        config[corpus] = {}
     else:
-        _config[corpus][key] = value
+        config[corpus][_key_to_str(key)] = _value_to_str(value)
+
+
+def add_corpus(corpus, **kwargs):
+    if corpus in config:
+        raise KeyError(f"Corpus '{corpus}' already exists. Use set() to modify values.")
+    # add empty corpus
+    set(corpus)
+    # add key-value pairs
+    for key, value in kwargs.items():
+        set(corpus, key=key, value=value)
 
 
 def set_default(key, value=None):
@@ -38,10 +100,10 @@ def set_default(key, value=None):
 
 
 def get_info(corpus):
-    info = _config[corpus]["info"]
+    info = config[corpus]["info"]
     if info is None:
         info = corpus
-        for key, val in _config[corpus].items():
+        for key, val in config[corpus].items():
             info += f"\n  {key}: {val}"
     return info
 

@@ -8,16 +8,48 @@ from warnings import warn
 __all__ = []
 
 # the default section
-_DEFAULT = "DEFAULT"
+__DEFAULT__ = "DEFAULT"
+# standard keys default section
+__INFO__ = "info"
+__ROOT__ = "root"
+__PATH__ = "path"
+__PARENT__ = "parent"
+__ACCESS__ = "access"
+__URL__ = "url"
+__TYPE__ = "type"
 
 # configuration
 config = configparser.ConfigParser(allow_no_value=True,
                                    interpolation=configparser.ExtendedInterpolation(),
-                                   default_section=_DEFAULT)
+                                   default_section=__DEFAULT__)
 
 
-def load_config(*args, **kwargs):
-    config.read(*args, **kwargs)
+def init():
+    # read configurations from default locations when loading module
+    config.read([
+        # default file that is part of the package, located one level up in the directory tree
+        Path(__file__).parents[1] / 'corpora.ini',
+        # file in user home corpora directory
+        Path("~/corpora/corpora.ini").expanduser(),
+        # file in current working directory
+        'corpora.ini'
+    ])
+
+
+# actually perform initialisation
+init()
+
+
+def load_config(file):
+    with open(file) as file:
+        config.read_file(file)
+
+
+def clear(clear_default=False):
+    for sec in config.sections():
+        assert config.remove_section(section=sec)
+    if clear_default:
+        config[__DEFAULT__] = {}
 
 
 def _corpus_to_str(corpus):
@@ -46,11 +78,11 @@ def _value_to_str(value):
 
 def iterate_corpus(corpus):
     for key, val in config[_corpus_to_str(corpus)].items():
-        if key == "info":
+        if key == __INFO__:
             yield key, get_info(corpus)
-        elif key == "root":
+        elif key == __ROOT__:
             yield key, get_root(corpus)
-        elif key == "path":
+        elif key == __PATH__:
             yield key, get_path(corpus)
         else:
             yield key, val
@@ -73,7 +105,16 @@ def get(corpus, key=None):
         return config[_corpus_to_str(corpus)][_key_to_str(key)]
 
 
-def set(corpus, key=None, value=None):
+def set(corpus, **kwargs):
+    # reset corpus
+    if not kwargs:
+        set_key_value(corpus)
+    # set keys-value arguments
+    for key, value in kwargs.items():
+        set_key_value(corpus, key=key, value=value)
+
+
+def set_key_value(corpus, key=None, value=None):
     if key is None and value is not None:
         raise ValueError("Cannot set value without key")
     corpus = _corpus_to_str(corpus)
@@ -89,18 +130,22 @@ def add_corpus(corpus, **kwargs):
     if corpus in config:
         raise KeyError(f"Corpus '{corpus}' already exists. Use set() to modify values.")
     # add empty corpus
-    set(corpus)
+    set_key_value(corpus)
     # add key-value pairs
-    for key, value in kwargs.items():
-        set(corpus, key=key, value=value)
+    if kwargs:
+        set(corpus, **kwargs)
 
 
-def set_default(key, value=None):
-    set(_DEFAULT, key=key, value=value)
+def set_default_key_value(key, value=None):
+    set_key_value(__DEFAULT__, key=key, value=value)
+
+
+def set_default(**kwargs):
+    set(__DEFAULT__, **kwargs)
 
 
 def get_info(corpus):
-    info = config[corpus]["info"]
+    info = config[corpus][__INFO__]
     if info is None:
         info = corpus
         for key, val in config[corpus].items():
@@ -110,11 +155,15 @@ def get_info(corpus):
 
 def get_root(corpus):
     # for sub-corpora the root is replaced by the parent's path
-    parent = get(corpus, "parent")
+    parent = get(corpus, __PARENT__)
     if parent is not None:
         root = get_path(parent)
     else:
-        root = Path(get(corpus, "root")).expanduser()
+        root = get(corpus, __ROOT__)
+        try:
+            root = Path(root).expanduser()
+        except TypeError:
+            raise TypeError(f"Could not get root directory. Could not convert {root} to path.")
     if not root.is_absolute():
         warn(f"Root for corpus '{corpus}' is a relative path ('{root}'), which is interpreted relative to the current "
              f"working directory ('{Path.cwd()}')", RuntimeWarning)
@@ -123,7 +172,7 @@ def get_root(corpus):
 
 def get_path(corpus):
     # get raw value
-    path = get(corpus, "path")
+    path = get(corpus, __PATH__)
     # if not specified, default to corpus name
     if path is None:
         path = corpus
@@ -134,14 +183,3 @@ def get_path(corpus):
         return path
     else:
         return get_root(corpus).joinpath(path)
-
-
-# read configurations from default locations when loading module
-load_config([
-    # default file that is part of the package, located one level up in the directory tree
-    Path(__file__).parents[1] / 'corpora.ini',
-    # file in user home corpora directory
-    Path("~/corpora/corpora.ini").expanduser(),
-    # file in current working directory
-    'corpora.ini'
-])

@@ -2,7 +2,10 @@
 from unittest import TestCase
 from pathlib import Path
 
-from CorpusInterface.config import load_config, config, get, set, set_default, get_info, get_root, get_path,\
+from CorpusInterface import config
+from CorpusInterface.config import init, load_config, clear, \
+    get, get_info, get_root, get_path,\
+    set, set_key_value, set_default, \
     add_corpus, iterate_corpus, getboolean
 
 
@@ -10,19 +13,19 @@ class Test(TestCase):
 
     def test_load_config(self):
         # assert default config was loaded and DEFULT section is there
-        self.assertTrue('DEFAULT' in config)
+        self.assertTrue('DEFAULT' in config.config)
         # assert the test config was not yet loaded
-        self.assertFalse('a test section' in config)
+        self.assertFalse('a test section' in config.config)
         # load it
         load_config('tests/test_config.ini')
         # assert it's there now
-        self.assertTrue('a test section' in config)
+        self.assertTrue('a test section' in config.config)
         # assert the multi-line value is correctly parsed
-        self.assertEqual('test values\nover multiple lines', config['a test section']['with'])
+        self.assertEqual('test values\nover multiple lines', config.config['a test section']['with'])
         # assert empty values are correctly parsed (also check that capitalisation is ignored)
-        self.assertEqual(None, config['a test section']['A VALUE THAT IS'])
+        self.assertEqual(None, config.config['a test section']['A VALUE THAT IS'])
         # assert references are correctly parsed
-        self.assertEqual('backref to test values\nover multiple lines', config['a test section']['and'])
+        self.assertEqual('backref to test values\nover multiple lines', config.config['a test section']['and'])
 
     def test_get_methods(self):
         load_config('tests/test_corpora.ini')
@@ -89,9 +92,9 @@ class Test(TestCase):
 
     def test_set(self):
         # set section
-        self.assertFalse("XXX" in config)
+        self.assertFalse("XXX" in config.config)
         set("XXX")
-        self.assertTrue("XXX" in config)
+        self.assertTrue("XXX" in config.config)
 
         # warn when existing corpus is reset
         with self.assertWarns(RuntimeWarning):
@@ -99,37 +102,37 @@ class Test(TestCase):
 
         # setting non-string section warns
         with self.assertWarns(RuntimeWarning):
-            self.assertFalse(1 in config)
+            self.assertFalse(1 in config.config)
             set(1)
-            self.assertFalse(1 in config)
-            self.assertTrue("1" in config)
+            self.assertFalse(1 in config.config)
+            self.assertTrue("1" in config.config)
 
         # set value in section to None
-        self.assertFalse("YYY" in config["XXX"])
-        set("XXX", "YYY")
-        self.assertTrue("YYY" in config["XXX"])
-        self.assertEqual(None, config["XXX"]["YYY"])
-        self.assertNotEqual('None', config["XXX"]["YYY"])
+        self.assertFalse("YYY" in config.config["XXX"])
+        set("XXX", YYY=None)
+        self.assertTrue("YYY" in config.config["XXX"])
+        self.assertEqual(None, config.config["XXX"]["YYY"])
+        self.assertNotEqual('None', config.config["XXX"]["YYY"])
 
         # error when value is specified but not key
-        self.assertRaises(ValueError, lambda: set("XXX", value="XXX"))
-        # warning for non-string keys and values (execpt None for value)
+        self.assertRaises(ValueError, lambda: set_key_value("XXX", value="XXX"))
+        # warning for non-string keys and values (except None for value)
         with self.assertWarns(RuntimeWarning):
-            set("XXX", 1)
+            set_key_value("XXX", key=1)
             self.assertEqual(None, get("XXX", 1))
         with self.assertWarns(RuntimeWarning):
-            set("XXX", "1", 2)
+            set_key_value("XXX", "1", 2)
             self.assertNotEqual(2, get("XXX", 1))
             self.assertEqual("2", get("XXX", 1))
 
         # set value in section
-        set("XXX", "YYY", "ZZZ")
-        self.assertEqual("ZZZ", config["XXX"]["YYY"])
+        set("XXX", YYY="ZZZ")
+        self.assertEqual("ZZZ", config.config["XXX"]["YYY"])
 
         # set value in DEFAULT
-        set_default("AAA")
+        set_default(AAA=None)
         self.assertEqual(None, get("XXX", "AAA"))
-        set_default("AAA", "BBB")
+        set_default(AAA="BBB")
         self.assertEqual("BBB", get("XXX", "AAA"))
 
         # add corpus
@@ -146,3 +149,21 @@ class Test(TestCase):
             self.assertFalse(getboolean(val))
         for val in [123, "lkj"]:
             self.assertRaises(ValueError, lambda: getboolean(val))
+
+    def test_clear(self):
+        # check that there are sections in config
+        self.assertGreater(len(list(config.config)), 1)
+        # clear config (don't remove default)
+        clear()
+        # check only config section is left
+        self.assertEqual([config.__DEFAULT__], list(config.config))
+        # check its not empty
+        self.assertGreater(len(list(config.config[config.__DEFAULT__])), 0)
+        # now also clear default
+        clear(clear_default=True)
+        # check its empty now
+        self.assertEqual(len(list(config.config[config.__DEFAULT__])), 0)
+        # re-initialise
+        init()
+        # check that there are sections in config again
+        self.assertGreater(len(list(config.config)), 1)

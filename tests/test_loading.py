@@ -32,7 +32,9 @@ class Test(TestCase):
             raise AccessCheck
 
         # check different corpora
-        for corpus in ["testcorpus-git-http", "testcorpus-zip", "testcorpus-git-ssh"]:
+        for corpus in ["testcorpus-git-http",
+                       # "testcorpus-git-ssh",  # does not work in GitHub action
+                       "testcorpus-zip"]:
             # download corpus
             download(corpus, overwrite=False)
             # assert the directory is there and non-empty

@@ -1,4 +1,7 @@
 # CorpusInterface
+![build](https://github.com/DCMLab/CorpusInterface/workflows/build/badge.svg)
+[![PyPI version](https://badge.fury.io/py/corpusinterface.svg)](https://badge.fury.io/py/corpusinterface)
+
 ![tests](https://github.com/DCMLab/CorpusInterface/workflows/tests/badge.svg)
 [![codecov](https://codecov.io/gh/DCMLab/CorpusInterface/branch/master/graph/badge.svg?token=BooAiwbcyk)](https://codecov.io/gh/DCMLab/CorpusInterface)
 
@@ -8,11 +11,7 @@ Repo to collect various functionality to read in and access the musical corpora
 
 ## Installation
 
-Clone the git repo and install locally from source with pip
-
-```pip install -e <path/to/python-util>```
-
-the `-e` installs in _editable_ mode so you can `git pull` without reinstalling the package to get updates.
+`pip install corpusinterface`
 
 ## Usage
 

@@ -3,7 +3,7 @@ import re
 import json
 import jsonpath_ng
 import pandas as pd
-from CorpusInterface import readers
+from CorpusInterface import readers_
 
 # A Document is a collection of musical events, and some metadata
 class Document:
@@ -49,11 +49,11 @@ class FileCorpus(Corpus):
     @staticmethod
     def choose_metadata_reader(metadata):
         if metadata.endswith(".txt"):
-            return readers.read_txt
+            return readers_.read_txt
         elif metadata.endswith(".csv"):
-            return readers.read_csv
+            return readers_.read_csv
         elif metadata.endswith(".tsv"):
-            return readers.read_tsv
+            return readers_.read_tsv
         else:
             raise TypeError(f"Unsupported metadata format of file '{metadata}'")
     
@@ -62,13 +62,13 @@ class FileCorpus(Corpus):
     def choose_file_reader(file_type):
 
         if file_type == "txt":
-            return readers.read_txt
+            return readers_.read_txt
         elif file_type == "csv":
-            return readers.read_csv
+            return readers_.read_csv
         elif file_type == "tsv":
-            return readers.read_tsv
+            return readers_.read_tsv
         elif file_type == "midi":
-            return readers.read_midi
+            return readers_.read_midi
         else:
             raise TypeError(f"Unsupported file format '{file_type}'")
 
@@ -119,11 +119,11 @@ class JSONCorpus(Corpus):
     @staticmethod
     def choose_metadata_reader(metadata):
         if metadata.endswith(".txt"):
-            return readers.read_txt
+            return readers_.read_txt
         elif metadata.endswith(".csv"):
-            return readers.read_csv
+            return readers_.read_csv
         elif metadata.endswith(".tsv"):
-            return readers.read_tsv
+            return readers_.read_tsv
         else:
             raise TypeError(f"Unsupported metadata format of file '{metadata}'")
 
@@ -184,11 +184,11 @@ class CSVCorpus(Corpus):
     @staticmethod
     def choose_metadata_reader(metadata):
         if metadata.endswith(".txt"):
-            return readers.read_txt
+            return readers_.read_txt
         elif metadata.endswith(".csv"):
-            return readers.read_csv
+            return readers_.read_csv
         elif metadata.endswith(".tsv"):
-            return readers.read_tsv
+            return readers_.read_tsv
         else:
             raise TypeError(f"Unsupported metadata format of file '{metadata}'")
 

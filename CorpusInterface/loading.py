@@ -27,6 +27,10 @@ class DownloadFailedError(Exception):
     pass
 
 
+class LoadingError(Exception):
+    pass
+
+
 def populate_kwargs(corpus, kwargs_dict):
     try:
         iter = config.get(corpus)

@@ -37,13 +37,8 @@ class LoadingError(Exception):
 
 
 def populate_kwargs(corpus, kwargs_dict):
-    try:
-        iter = config.get(corpus)
-    except KeyError:
-        # corpus is not in config: no keyword arguments to populate (pass)
-        pass
-    else:
-        for key, val in iter:
+    if corpus is not None:
+        for key, val in config.get(corpus):
             if key not in kwargs_dict:
                 kwargs_dict[key] = val
     return kwargs_dict

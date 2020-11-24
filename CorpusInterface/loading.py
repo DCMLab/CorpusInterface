@@ -1,11 +1,10 @@
 #  Copyright (c) 2020 Robert Lieck
 from pathlib import Path
-import shutil
 import urllib.request
 import tarfile
 import zipfile
 import logging
-from warnings import warn
+from shutil import rmtree
 
 import git
 
@@ -21,7 +20,6 @@ readers = {
 
 # standard keyword arguments
 __DOWNLOAD__ = "download"
-__OVERWRITE__ = "overwrite"
 __READER__ = "reader"
 
 
@@ -85,13 +83,6 @@ def download(corpus, **kwargs):
     parent = config.get(corpus, config.__PARENT__)
     if parent is not None:
         # for sub-corpora delegate downloading to parent
-        # - requesting overwrite of parent not permitted for security reasons
-        # - if 'overwrite' is NOT explicitly specified but IS specified in config of parent, that value is used
-        if in_kwargs_and_true(__OVERWRITE__, kwargs):
-            warn("Requesting overwrite of parent from child is not permitted. The option will be disabled and the "
-                 "default from the parent corpus will be used.", RuntimeWarning)
-            del kwargs[__OVERWRITE__]
-        # download parent
         download(parent, **kwargs)
     else:
         # populate keyword arguments from config
@@ -101,16 +92,13 @@ def download(corpus, **kwargs):
         # check if path already exists
         path = Path(kwargs[config.__PATH__])
         if path.exists():
-            # path exists (overwriting directories may be requested)
-            if in_kwargs_and_true(__OVERWRITE__, kwargs):
-                if path.is_dir():
-                    shutil.rmtree(path)
-                else:
-                    raise DownloadFailedError(f"Cannot overwrite target path {path}, because it is not a directory")
-            else:
-                raise DownloadFailedError(f"Cannot download corpus '{corpus}', target path {path} exists "
-                                   f"(use overwrite=True to overwrite existing directories).")
-        path.mkdir(parents=True)
+            # directory is not empty
+            if path.is_file() or list(path.iterdir()):
+                raise DownloadFailedError(f"Cannot download corpus '{corpus}': "
+                                          f"target path {path} exists and is non-empty. "
+                                          f"Use remove('{corpus}') to remove.")
+        else:
+            path.mkdir(parents=True)
         logging.info(f"Downloading corpus '{corpus}' to {path}")
         # use known access method or provided callable
         if access in ["git", "zip", "tar.gz"]:
@@ -135,4 +123,4 @@ def download(corpus, **kwargs):
             return access(corpus, **kwargs)
         else:
             # unknown access method
-            raise ValueError(f"Unknown access method '{kwargs['access']}'")
+            raise DownloadFailedError(f"Unknown access method '{kwargs['access']}'")

@@ -53,6 +53,39 @@ def in_kwargs_and_true(key, kwarg_dict):
     return key in kwarg_dict and config.getboolean(kwarg_dict[key])
 
 
+def remove(corpus, silent=False, not_exists_ok=False, not_dir_ok=False, **kwargs):
+    # populate keyword arguments
+    kwargs = populate_kwargs(corpus, kwargs)
+    # get path to remove
+    path = Path(kwargs[config.__PATH__])
+    # check path
+    if path.exists():
+        if not path.is_dir() and not not_dir_ok:
+            raise NotADirectoryError(f"Path {path} for corpus '{corpus}' is not a directory.")
+    else:
+        if not not_exists_ok:
+            raise FileNotFoundError(f"Path {path} for corpus '{corpus}' does not exist.")
+        else:
+            return
+    # get confirmation
+    if not silent:
+        while True:
+            rm = input(f"Remove corpus '{corpus}' ({path}) [y/N]: ").strip().lower()
+            if rm in ['y', 'yes']:
+                rm = True
+                break
+            elif rm in ['', 'n', 'no']:
+                rm = False
+                break
+    else:
+        rm = True
+    # remove
+    if rm:
+        rmtree(path)
+    else:
+        print(f"Canceled. Corpus '{corpus}' ({path}) not removed.")
+
+
 def load(corpus, **kwargs):
     """
     Load a corpus.

@@ -1,9 +1,10 @@
 #  Copyright (c) 2020 Robert Lieck
-from unittest import TestCase
+from unittest import TestCase, mock
 from pathlib import Path
+from io import StringIO
 
 from CorpusInterface import config
-from CorpusInterface.config import init, load_config, clear, \
+from CorpusInterface.config import init, load_config, clear, show, \
     get, get_info, get_root, get_path,\
     set, set_key_value, set_default, \
     add_corpus, iterate_corpus, getboolean
@@ -36,7 +37,7 @@ class Test(TestCase):
         self.assertEqual(None, get("Test Corpus", "parent"))
         self.assertEqual(None, get("Test Corpus", "access"))
         self.assertEqual(None, get("Test Corpus", "url"))
-        self.assertEqual(None, get("Test Corpus", "type"))
+        self.assertEqual("FileCorpus", get("Test Corpus", "reader"))
 
         # check info
         self.assertEqual("Test Corpus\n"
@@ -46,7 +47,7 @@ class Test(TestCase):
                          "  parent: None\n"
                          "  access: None\n"
                          "  url: None\n"
-                         "  type: None", get_info("Test Corpus"))
+                         "  reader: FileCorpus", get_info("Test Corpus"))
         self.assertEqual("Some info", get_info("Test Sub-Corpus"))
 
         # check omitting key is equivalent to iterate_corpus and returns iterator over processed values
@@ -57,7 +58,7 @@ class Test(TestCase):
                                  ("parent", "Test Corpus"),
                                  ("access", None),
                                  ("url", None),
-                                 ("type", None)]),
+                                 ("reader", "FileCorpus")]),
                          sorted(list(get("Test Sub-Corpus"))))
 
         # check default root
@@ -167,3 +168,20 @@ class Test(TestCase):
         init()
         # check that there are sections in config again
         self.assertGreater(len(list(config.config)), 1)
+
+    def test_print(self):
+        clear(clear_default=True)
+        load_config("tests/test_config.ini")
+        with mock.patch('sys.stdout', new=StringIO()) as out:
+            show()
+            self.assertEqual("[DEFAULT]\n"
+                             "    default_key: default_value\n"
+                             "\n"
+                             "[a test section]"
+                             "\n    with: test values\n"
+                             "over multiple lines\n"
+                             "    a value that is: None\n"
+                             "    and: backref to test values\n"
+                             "over multiple lines\n"
+                             "    default_key: default_value\n\n", out.getvalue())
+        init()

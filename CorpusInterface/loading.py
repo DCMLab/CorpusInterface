@@ -81,19 +81,32 @@ def remove(corpus, silent=False, not_exists_ok=False, not_dir_ok=False, **kwargs
         print(f"Canceled. Corpus '{corpus}' ({path}) not removed.")
 
 
-def load(corpus, **kwargs):
+def load(corpus=None, **kwargs):
     """
     Load a corpus.
-    :param corpus: Name of the corpus to load.
-    :param kwargs: Keyword arguments that are populated from config (if the corpus is registered); specified values
-    for keyword arguments take precedence over the values from config.
-    :return:
+    :param corpus: Name of the corpus to load or None to only use given keyword arguments.
+    :param kwargs: Keyword arguments that are populated from config; specifying parameters as keyword arguments take
+    precedence over the values from config.
+    :return: output of reader
     """
     # populate keyword arguments from config
     kwargs = populate_kwargs(corpus, kwargs)
     # check if corpus exists
     if Path.exists(kwargs[config.__PATH__]):
-        return kwargs[__READER__](**kwargs)
+        if __READER__ in kwargs:
+            # get reader
+            reader = kwargs[__READER__]
+            # remove reader from kwargs
+            del kwargs[__READER__]
+            if isinstance(reader, str):
+                try:
+                    reader = readers[reader]
+                except KeyError:
+                    raise LoadingError(f"Unknown reader '{reader}'.")
+            # call reader with remaining kwargs
+            return reader(**kwargs)
+        else:
+            raise LoadingError("No reader specified.")
     else:
         # if it does not exist, try downloading (if requested) and then retry
         if in_kwargs_and_true(__DOWNLOAD__, kwargs):

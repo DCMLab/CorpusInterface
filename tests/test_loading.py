@@ -1,11 +1,12 @@
 #  Copyright (c) 2020 Robert Lieck
-from unittest import TestCase
+from unittest import TestCase, mock
 from pathlib import Path
-from warnings import warn
+from io import StringIO
 import shutil
 
-from CorpusInterface.loading import download, load, CorpusNotFoundError, DownloadFailedError
+from CorpusInterface.loading import download, load, remove, CorpusNotFoundError, DownloadFailedError, LoadingError
 from CorpusInterface import config
+from CorpusInterface.corpora import FileCorpus
 
 
 class Test(TestCase):
@@ -34,52 +35,28 @@ class Test(TestCase):
         # check different corpora
         for corpus in ["testcorpus-git-http",
                        # "testcorpus-git-ssh",  # does not work in GitHub action
-                       "testcorpus-zip"]:
+                       "testcorpus-zip",
+                       "testcorpus-tar.gz"]:
+            # check with custom access function (raises and leaves directory empty)
+            self.assertRaises(AccessCheck, lambda: download(corpus, access=access))
+            # check bad access method
+            self.assertRaises(DownloadFailedError, lambda: download(corpus, access="bad access method"))
             # download corpus
-            download(corpus, overwrite=False)
+            download(corpus)
             # assert the directory is there and non-empty
             path = config.get_path(corpus)
             self.assertTrue(list(path.iterdir()))
-            # check with custom access function
-            self.assertRaises(AccessCheck, lambda: download(corpus, overwrite=True, access=access))
+            # fails because exists
+            self.assertRaises(DownloadFailedError, lambda: download(corpus))
 
-    def test_overwrite(self):
-        corpus = "testcorpus-zip"
-        path = config.get_path(corpus)
-        # first download
-        download(corpus, overwrite=False)
-        # check folder is there
-        self.assertTrue(list(path.iterdir()))
-        # re-download fails with overwriting=False
-        self.assertRaises(DownloadFailedError, lambda: download(corpus, overwrite=False))
-        # re-download succeeds with overwriting=True
-        download(corpus, overwrite=True)
-
-    def test_overwrite_from_child(self):
-        parent_corpus = "testcorpus-zip"
+    def test_download_from_child(self):
+        # child corpus
         corpus = "testcorpus-zip-child"
-        parent_path = config.get_path(parent_corpus)
+        # download
+        download(corpus)
+        # assert the directory is there and non-empty
         path = config.get_path(corpus)
-        # first download
-        download(corpus, overwrite=False)
-        # check folder is there
         self.assertTrue(list(path.iterdir()))
-        # also for parent
-        self.assertTrue(list(parent_path.iterdir()))
-        # re-download fails with overwriting=False
-        self.assertRaises(DownloadFailedError, lambda: download(corpus, overwrite=False))
-        # re-download with overwriting=True triggers warning because parent cannot be overwritten from child
-        # as parent exists, download additionally fails
-        with self.assertWarns(RuntimeWarning):
-            self.assertRaises(DownloadFailedError, lambda: download(corpus, overwrite=True))
-        # set overwrite=True for parent in config
-        config.set_key_value(parent_corpus, "overwrite", "True")
-        # try again: this also warns but download succeeds
-        with self.assertWarns(RuntimeWarning):
-            download(corpus, overwrite=True)
-        # unset overwrite for parent to not mess up other things
-        config.set_key_value(parent_corpus, "overwrite")
-        self.assertEqual(None, config.get(parent_corpus, "overwrite"))
 
     def test_load(self):
         corpus = "testcorpus-zip"
@@ -87,3 +64,63 @@ class Test(TestCase):
         self.assertRaises(CorpusNotFoundError, lambda: load(corpus))
         # check load with download; custom reader
         self.assertEqual(1234, load(corpus, download=True, reader=lambda **kwargs: 1234))
+        # check load with only keyword arguments
+        self.assertEqual(1234, load(path=Path("tests/corpora/testcorpus-zip"), reader=lambda **kwargs: 1234))
+        # test with bad reader
+        self.assertRaises(LoadingError, lambda: load(corpus, reader="bad reader"))
+        # test with default reader (FileCorpus)
+        c = load(corpus)
+        self.assertTrue(str(c).startswith("FileCorpus(") and
+                        str(c).endswith("/corpora/testcorpus-zip)") and
+                        type(c) == FileCorpus)
+
+    def test_errors(self):
+        self.assertRaises(LoadingError, lambda: load(path=Path("tests/FileCorpus")))
+
+    def test_remove(self):
+        corpus = "testcorpus-zip"
+
+        # download
+        download(corpus)
+        path = config.get_path(corpus)
+        # assert the directory is there and non-empty
+        self.assertTrue(list(path.iterdir()))
+
+        # remove without input cancels
+        with mock.patch('builtins.input', return_value=''):
+            with mock.patch('sys.stdout', new=StringIO()) as out:
+                remove(corpus)
+                self.assertTrue(out.getvalue().startswith("Canceled. Corpus '"))
+        # assert the directory is there and non-empty
+        self.assertTrue(list(path.iterdir()))
+
+        # remove with 'no' input cancels
+        with mock.patch('builtins.input', return_value='no'):
+            with mock.patch('sys.stdout', new=StringIO()) as out:
+                remove(corpus)
+                self.assertTrue(out.getvalue().startswith("Canceled. Corpus '"))
+        # assert the directory is there and non-empty
+        self.assertTrue(list(path.iterdir()))
+
+        # remove with 'yes' input removes
+        with mock.patch('builtins.input', return_value='yes'):
+            remove(corpus)
+        # assert the directory is not there anymore
+        self.assertFalse(path.exists())
+
+        # re-download
+        download(corpus)
+        # assert the directory is there and non-empty
+        self.assertTrue(list(path.iterdir()))
+        # silent remove succeeds
+        remove(corpus, silent=True)
+        # assert the directory is not there anymore
+        self.assertFalse(path.exists())
+
+        # remove non-existent raises
+        self.assertRaises(FileNotFoundError, lambda: remove(corpus, silent=True))
+        # which can be ignored
+        remove(corpus, not_exists_ok=True, silent=True)
+
+        # path pointing to file raises
+        self.assertRaises(NotADirectoryError, lambda: remove(corpus, path='tests/FileCorpus/file_1'))

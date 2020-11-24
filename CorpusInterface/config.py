@@ -40,6 +40,14 @@ def init():
 init()
 
 
+def show():
+    for sec in config:
+        print(f"[{sec}]")
+        for key, val in config[sec].items():
+            print(f"    {key}: {val}")
+        print()
+
+
 def load_config(file):
     with open(file) as file:
         config.read_file(file)
@@ -160,10 +168,7 @@ def get_root(corpus):
         root = get_path(parent)
     else:
         root = get(corpus, __ROOT__)
-        try:
-            root = Path(root).expanduser()
-        except TypeError:
-            raise TypeError(f"Could not get root directory. Could not convert {root} to path.")
+        root = Path(root).expanduser()
     if not root.is_absolute():
         warn(f"Root for corpus '{corpus}' is a relative path ('{root}'), which is interpreted relative to the current "
              f"working directory ('{Path.cwd()}')", RuntimeWarning)

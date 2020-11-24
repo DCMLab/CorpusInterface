@@ -1,20 +1,25 @@
 #  Copyright (c) 2020 Robert Lieck
 from pathlib import Path
-import shutil
 import urllib.request
 import tarfile
 import zipfile
 import logging
-from warnings import warn
+from shutil import rmtree
 
 import git
 
 from CorpusInterface import config
+from CorpusInterface.corpora import FileCorpus
+
+
+# dictionary with reader functions
+readers = {
+    "FileCorpus": FileCorpus.init
+}
 
 
 # standard keyword arguments
 __DOWNLOAD__ = "download"
-__OVERWRITE__ = "overwrite"
 __READER__ = "reader"
 
 
@@ -27,14 +32,13 @@ class DownloadFailedError(Exception):
     pass
 
 
+class LoadingError(Exception):
+    pass
+
+
 def populate_kwargs(corpus, kwargs_dict):
-    try:
-        iter = config.get(corpus)
-    except KeyError:
-        # corpus is not in config: no keyword arguments to populate (pass)
-        pass
-    else:
-        for key, val in iter:
+    if corpus is not None:
+        for key, val in config.get(corpus):
             if key not in kwargs_dict:
                 kwargs_dict[key] = val
     return kwargs_dict
@@ -44,19 +48,65 @@ def in_kwargs_and_true(key, kwarg_dict):
     return key in kwarg_dict and config.getboolean(kwarg_dict[key])
 
 
-def load(corpus, **kwargs):
+def remove(corpus, silent=False, not_exists_ok=False, not_dir_ok=False, **kwargs):
+    # populate keyword arguments
+    kwargs = populate_kwargs(corpus, kwargs)
+    # get path to remove
+    path = Path(kwargs[config.__PATH__])
+    # check path
+    if path.exists():
+        if not path.is_dir() and not not_dir_ok:
+            raise NotADirectoryError(f"Path {path} for corpus '{corpus}' is not a directory.")
+    else:
+        if not not_exists_ok:
+            raise FileNotFoundError(f"Path {path} for corpus '{corpus}' does not exist.")
+        else:
+            return
+    # get confirmation
+    if not silent:
+        while True:
+            rm = input(f"Remove corpus '{corpus}' ({path}) [y/N]: ").strip().lower()
+            if rm in ['y', 'yes']:
+                rm = True
+                break
+            elif rm in ['', 'n', 'no']:
+                rm = False
+                break
+    else:
+        rm = True
+    # remove
+    if rm:
+        rmtree(path)
+    else:
+        print(f"Canceled. Corpus '{corpus}' ({path}) not removed.")
+
+
+def load(corpus=None, **kwargs):
     """
     Load a corpus.
-    :param corpus: Name of the corpus to load.
-    :param kwargs: Keyword arguments that are populated from config (if the corpus is registered); specified values
-    for keyword arguments take precedence over the values from config.
-    :return:
+    :param corpus: Name of the corpus to load or None to only use given keyword arguments.
+    :param kwargs: Keyword arguments that are populated from config; specifying parameters as keyword arguments take
+    precedence over the values from config.
+    :return: output of reader
     """
     # populate keyword arguments from config
     kwargs = populate_kwargs(corpus, kwargs)
     # check if corpus exists
     if Path.exists(kwargs[config.__PATH__]):
-        return kwargs[__READER__](**kwargs)
+        if __READER__ in kwargs:
+            # get reader
+            reader = kwargs[__READER__]
+            # remove reader from kwargs
+            del kwargs[__READER__]
+            if isinstance(reader, str):
+                try:
+                    reader = readers[reader]
+                except KeyError:
+                    raise LoadingError(f"Unknown reader '{reader}'.")
+            # call reader with remaining kwargs
+            return reader(**kwargs)
+        else:
+            raise LoadingError("No reader specified.")
     else:
         # if it does not exist, try downloading (if requested) and then retry
         if in_kwargs_and_true(__DOWNLOAD__, kwargs):
@@ -74,13 +124,6 @@ def download(corpus, **kwargs):
     parent = config.get(corpus, config.__PARENT__)
     if parent is not None:
         # for sub-corpora delegate downloading to parent
-        # - requesting overwrite of parent not permitted for security reasons
-        # - if 'overwrite' is NOT explicitly specified but IS specified in config of parent, that value is used
-        if in_kwargs_and_true(__OVERWRITE__, kwargs):
-            warn("Requesting overwrite of parent from child is not permitted. The option will be disabled and the "
-                 "default from the parent corpus will be used.", RuntimeWarning)
-            del kwargs[__OVERWRITE__]
-        # download parent
         download(parent, **kwargs)
     else:
         # populate keyword arguments from config
@@ -90,16 +133,13 @@ def download(corpus, **kwargs):
         # check if path already exists
         path = Path(kwargs[config.__PATH__])
         if path.exists():
-            # path exists (overwriting directories may be requested)
-            if in_kwargs_and_true(__OVERWRITE__, kwargs):
-                if path.is_dir():
-                    shutil.rmtree(path)
-                else:
-                    raise DownloadFailedError(f"Cannot overwrite target path {path}, because it is not a directory")
-            else:
-                raise DownloadFailedError(f"Cannot download corpus '{corpus}', target path {path} exists "
-                                   f"(use overwrite=True to overwrite existing directories).")
-        path.mkdir(parents=True)
+            # directory is not empty
+            if path.is_file() or list(path.iterdir()):
+                raise DownloadFailedError(f"Cannot download corpus '{corpus}': "
+                                          f"target path {path} exists and is non-empty. "
+                                          f"Use remove('{corpus}') to remove.")
+        else:
+            path.mkdir(parents=True)
         logging.info(f"Downloading corpus '{corpus}' to {path}")
         # use known access method or provided callable
         if access in ["git", "zip", "tar.gz"]:
@@ -124,4 +164,4 @@ def download(corpus, **kwargs):
             return access(corpus, **kwargs)
         else:
             # unknown access method
-            raise ValueError(f"Unknown access method '{kwargs['access']}'")
+            raise DownloadFailedError(f"Unknown access method '{kwargs['access']}'")

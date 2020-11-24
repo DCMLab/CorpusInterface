@@ -10,6 +10,13 @@ from warnings import warn
 import git
 
 from CorpusInterface import config
+from CorpusInterface.corpora import FileCorpus
+
+
+# dictionary with reader functions
+readers = {
+    "FileCorpus": FileCorpus.init
+}
 
 
 # standard keyword arguments

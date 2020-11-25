@@ -4,9 +4,10 @@ from pathlib import Path
 from io import StringIO
 import shutil
 
-from CorpusInterface.loading import download, load, remove, CorpusNotFoundError, DownloadFailedError, LoadingError
-from CorpusInterface import config
-from CorpusInterface.corpora import FileCorpus
+from corpusinterface.loading import download, load, remove, CorpusNotFoundError, DownloadFailedError, LoadingFailedError
+from corpusinterface import config
+from corpusinterface.corpora import FileCorpus
+from corpusinterface import util
 
 
 class Test(TestCase):
@@ -14,10 +15,10 @@ class Test(TestCase):
     root_path = Path(__file__).parent / "corpora"
 
     def setUp(self):
+        # init and load test corpora into config
+        config.init_config("./tests/test_corpora.ini")
         # set default root to test directory
         config.set_default_key_value(config.__ROOT__, str(self.root_path))
-        # load test corpora into config
-        config.load_config("./tests/test_corpora.ini")
 
     def tearDown(self):
         # cleanup: remove root directory with downloaded corpora
@@ -44,10 +45,16 @@ class Test(TestCase):
             # download corpus
             download(corpus)
             # assert the directory is there and non-empty
-            path = config.get_path(corpus)
+            path = config.get(corpus, util.__PATH__)
             self.assertTrue(list(path.iterdir()))
             # fails because exists
             self.assertRaises(DownloadFailedError, lambda: download(corpus))
+
+        # test failure for bad ULR
+        self.assertRaises(DownloadFailedError,
+                          lambda: download(None,
+                                           access="zip",
+                                           url="http://some-bad-url-that-skrews-up-the-tests.com/corpus.zip"))
 
     def test_download_from_child(self):
         # child corpus
@@ -55,34 +62,36 @@ class Test(TestCase):
         # download
         download(corpus)
         # assert the directory is there and non-empty
-        path = config.get_path(corpus)
+        path = config.get(corpus, util.__PATH__)
         self.assertTrue(list(path.iterdir()))
 
     def test_load(self):
         corpus = "testcorpus-zip"
         # check load without download (fails)
         self.assertRaises(CorpusNotFoundError, lambda: load(corpus))
-        # check load with download; custom reader
-        self.assertEqual(1234, load(corpus, download=True, reader=lambda **kwargs: 1234))
+        # check load with download; custom loader
+        self.assertEqual(1234, load(corpus, download=True, loader=lambda **kwargs: 1234))
         # check load with only keyword arguments
-        self.assertEqual(1234, load(path=Path("tests/corpora/testcorpus-zip"), reader=lambda **kwargs: 1234))
-        # test with bad reader
-        self.assertRaises(LoadingError, lambda: load(corpus, reader="bad reader"))
-        # test with default reader (FileCorpus)
+        self.assertEqual(1234, load(path=Path("tests/corpora/testcorpus-zip"), loader=lambda **kwargs: 1234))
+        # test with bad loader string
+        self.assertRaises(LoadingFailedError, lambda: load(corpus, loader="bad loader"))
+        # test with non-callable loader
+        self.assertRaises(LoadingFailedError, lambda: load(corpus, loader=1234))
+        # test with default loader (FileCorpus)
         c = load(corpus)
         self.assertTrue(str(c).startswith("FileCorpus(") and
                         str(c).endswith("/corpora/testcorpus-zip)") and
                         type(c) == FileCorpus)
 
     def test_errors(self):
-        self.assertRaises(LoadingError, lambda: load(path=Path("tests/FileCorpus")))
+        self.assertRaises(LoadingFailedError, lambda: load(path=Path("tests/FileCorpus")))
 
     def test_remove(self):
         corpus = "testcorpus-zip"
 
         # download
         download(corpus)
-        path = config.get_path(corpus)
+        path = config.get(corpus, util.__PATH__)
         # assert the directory is there and non-empty
         self.assertTrue(list(path.iterdir()))
 

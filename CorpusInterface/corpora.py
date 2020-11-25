@@ -6,23 +6,25 @@ import re
 
 class Data:
     """An abstract base class for data items, such as corpora or documents."""
-    def metadata(self):
+    def metadata(self, *args, **kwargs):
         raise NotImplementedError
 
-    def data(self):
+    def data(self, *args, **kwargs):
         raise NotImplementedError
 
 
 class FileCorpus(Data):
     """A collection of files in a directory"""
 
+    # special keyword arguments
+    __META_READER__ = "meta_reader"
+    __FILE_READER__ = "file_reader"
+
     @classmethod
     def init(cls, **kwargs):
         if 'path' not in kwargs:
             raise TypeError("Missing required keyword argument 'path'")
-        kwargs = {**dict(reader=None,
-                         meta_reader=None,
-                         file_regex=None,
+        kwargs = {**dict(file_regex=None,
                          path_regex=None,
                          file_exclude_regex=None,
                          path_exclude_regex=None),
@@ -31,8 +33,6 @@ class FileCorpus(Data):
 
     def __init__(self,
                  path,
-                 reader=None,
-                 meta_reader=None,
                  file_regex=None,
                  path_regex=None,
                  file_exclude_regex=None,
@@ -44,9 +44,6 @@ class FileCorpus(Data):
             raise FileNotFoundError(f"Corpus directory {self.path} does not exist")
         elif not self.path.is_dir():
             raise NotADirectoryError(f"{self.path} is not a directory")
-        # set readers
-        self.reader = reader
-        self.meta_reader = meta_reader
         # remember additional keyword arguments
         self.kwargs = kwargs
         # initialise regex for including files
@@ -73,11 +70,13 @@ class FileCorpus(Data):
     def __repr__(self):
         return f"{self.__class__.__name__}({self.path})"
 
-    def metadata(self):
-        if self.meta_reader is None:
+    def metadata(self, *args, **kwargs):
+        kwargs = {**self.kwargs, **kwargs}
+        meta_reader = kwargs.pop(self.__META_READER__, None)
+        if meta_reader is None:
             return self.path
         else:
-            return self.meta_reader(self.path, **self.kwargs)
+            return meta_reader(self.path, *args, **kwargs)
 
     def files(self):
         # recursively traverse directory
@@ -100,9 +99,11 @@ class FileCorpus(Data):
                 # yield absolute path to file
                 yield path
 
-    def data(self):
+    def data(self, *args, **kwargs):
+        kwargs = {**self.kwargs, **kwargs}
+        file_reader = kwargs.pop(self.__FILE_READER__, None)
         for path in self.files():
-            if self.reader is None:
+            if file_reader is None:
                 yield path
             else:
-                yield self.reader(path, **self.kwargs)
+                yield file_reader(path, *args, **kwargs)

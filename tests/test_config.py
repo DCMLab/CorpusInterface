@@ -1,5 +1,5 @@
 #  Copyright (c) 2020 Robert Lieck
-from unittest import TestCase, SkipTest
+from unittest import TestCase
 from pathlib import Path
 
 from corpusinterface import config
@@ -13,7 +13,6 @@ from corpusinterface.util import CorpusExistsError, CorpusNotFoundError, \
 
 class Test(TestCase):
 
-    @SkipTest
     def test_init(self):
         # should always run smoothly
         init_config()

@@ -10,30 +10,14 @@ import git
 
 from CorpusInterface import config
 from CorpusInterface.corpora import FileCorpus
+from .util import __DOWNLOAD__, __ACCESS__, __LOADER__, __URL__, \
+    CorpusNotFoundError, DownloadFailedError, LoadingFailedError
 
 
 # dictionary with reader functions
 readers = {
     "FileCorpus": FileCorpus.init
 }
-
-
-# standard keyword arguments
-__DOWNLOAD__ = "download"
-__READER__ = "reader"
-
-
-# custom exceptions
-class CorpusNotFoundError(Exception):
-    pass
-
-
-class DownloadFailedError(Exception):
-    pass
-
-
-class LoadingError(Exception):
-    pass
 
 
 def populate_kwargs(corpus, kwargs_dict):

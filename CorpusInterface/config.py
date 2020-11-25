@@ -3,20 +3,11 @@ import configparser
 from pathlib import Path
 from warnings import warn
 
+from .util import __DEFAULT__, __ROOT__, __PARENT__, __PATH__, CorpusExistsError, CorpusNotFoundError
+
 # no imports with 'import config *'
 # this is primarily to avoid unintentional overwriting of built-in 'set' with config.set
 __all__ = []
-
-# the default section
-__DEFAULT__ = "DEFAULT"
-# standard keys default section
-__INFO__ = "info"
-__ROOT__ = "root"
-__PATH__ = "path"
-__PARENT__ = "parent"
-__ACCESS__ = "access"
-__URL__ = "url"
-__TYPE__ = "type"
 
 # configuration
 config = configparser.ConfigParser(allow_no_value=True,

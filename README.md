@@ -33,16 +33,19 @@ and let's assume you made it available as a zip archive at `http://your-website.
 
 ```python
 from corpusinterface import config, load
+
 # initialise config
 config.init_config()
+
 # add your corpus
 config.add_corpus("Your Corpus",
                   access="zip",
                   url="http://your-website.com/your-corpus.zip")
-# load the corpus (using a file_reader of your choice)
-corpus = load("Your Corpus",
-              download=True)
-# access the data
+
+# load the corpus
+corpus = load("Your Corpus", download=True)
+
+# access the data (using a file_reader of your choice)
 for file in corpus.data(file_reader=lambda file, **kwargs: f"reading: {file}"):
     print(file)
 ```
@@ -68,7 +71,13 @@ access: zip
 url: http://your-website.com/your-corpus.zip
 ```
 
-If you put this file at the default location  `~/corpora/corpora.ini` in your home directory or a file `corpora.ini` in the current working directory, it is automatically loaded when calling `config.init_config()`. Otherwise, you can load any config file manually from within Python with
+If you put this file at the default location  `~/corpora/corpora.ini` in your home directory or a file `corpora.ini` in the current working directory, it is automatically loaded when calling `config.init_config()`. Otherwise, you can load any config file by either providing it to `init_config`
+
+```python
+config.init_config("your-config-file.ini")
+```
+
+or loading it manually later
 
 ```python
 config.load_config("your-config-file.ini")
@@ -97,7 +106,7 @@ In particular, the default `root` directory `~/corpora` was added and the corpus
 
 #### Special parameters
 
-The parameters `root`, `path`, `parent`,  `download`, `loader`, `access`, and `url` are special and their values treated in a particular way.
+The parameters `root`, `path`, `parent`,  `download`, `loader`, `access`, and `url` are special and their values are treated in a particular way.
 
 ##### `root`
 
@@ -105,9 +114,13 @@ Root directory to store the corpus in. This should be an absolute path, `~` is e
 
 ##### `path`
 
-Directory to store the corpus in. This can be an absolute path (`~` is expanded to the user home), in which case it replaces `root`. It can be a relative path, in which case it is appended to `root`. It can be empty, in which case the corpus `[Name]` is appended to `root`. A call to `config.get(Name, 'path')` returns the effective value.
+Directory to store the corpus in. This can be
 
-Note that for sub-corpora (with non-empty `parent`) the parent's `path` is used instead of `root`.
+1. an absolute path (`~` is expanded to the user home), in which case `root` is ignored
+2. a relative path, in which case it is appended to `root` or
+3. be empty, in which case the corpus `[Name]` is appended to `root`.
+
+A call to `config.get(Name, 'path')` returns the effective value. Note that for sub-corpora (with non-empty `parent`) the parent's `path` is used instead of `root`.
 
 ##### `parent`
 
@@ -139,7 +152,7 @@ config.add_corpus("Your Corpus",
                   prefix="my prefix")
 ```
 
-from within Python. Your file reader can use this parameter
+from within Python. Your file reader can then make use of this parameter (provided as a keyword argument, so you have to refer to it by the correct name)
 
 ```python
 file_reader=lambda file, prefix, **kwargs: f"{prefix}: {file}"
@@ -150,7 +163,7 @@ my prefix: ~/corpora/Your Corpus/file_1.txt
 ...
 ```
 
-This is also the reason why we always need  `**kwargs` in a reader function to accept all keyword arguments that may be provided, even if we decide to not use them.
+This is also the reason why we always need  `**kwargs` in a reader function to accept all keyword arguments that are provided, even if we decide to not use them.
 
 The config values can be dynamically overwritten in the `load` function
 

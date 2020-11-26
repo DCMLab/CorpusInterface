@@ -63,7 +63,7 @@ def _value_to_str(value):
 
 def init_config(*args, default=None, home=None, local=None):
     # default config that is part of the package (located one level up in the directory tree)
-    default_file = Path(__file__).parents[1] / 'corpora.ini'
+    default_file = Path(__file__).parents[1] / 'default_config.ini'
     if default:
         load_config(default_file)
     elif default is None:

@@ -1,7 +1,7 @@
 #  Copyright (c) 2020 Robert Lieck
 from unittest import TestCase
 
-from CorpusInterface.corpora import Data, FileCorpus
+from corpusinterface.corpora import Data, FileCorpus
 
 
 class TestData(TestCase):
@@ -63,11 +63,11 @@ class TestFileCorpus(TestCase):
                                  "tests/FileCorpus/sub_dir/file_3",
                                  "tests/FileCorpus/sub_dir/file_4"]), sorted(str(f) for f in corpus.data()))
 
-        # custom reader
-        def reader(path, prefix):
+        # custom file_reader
+        def file_reader(path, prefix):
             return f"{prefix}: {path}"
 
-        corpus = FileCorpus.init(path="tests/FileCorpus", reader=reader, prefix="path")
+        corpus = FileCorpus.init(path="tests/FileCorpus", file_reader=file_reader, prefix="path")
         self.assertEqual(sorted(["path: tests/FileCorpus/file_1",
                                  "path: tests/FileCorpus/file_2",
                                  "path: tests/FileCorpus/sub_dir/file_3",

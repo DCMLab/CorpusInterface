@@ -11,7 +11,7 @@ setuptools.setup(
     description="tools for loading corpora",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/DCMLab/CorpusInterface",
+    url="https://github.com/DCMLab/corpusinterface",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

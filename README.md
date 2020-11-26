@@ -18,6 +18,20 @@ Basic functionality to maintain and load corpora.
 
 ### Adding your own corpus
 
+#### TL;DR
+
+Provide a config file `your-corpus.ini`
+
+```ini
+[Your Corpus]
+access: zip
+url: http://your-website.com/your-corpus.zip
+```
+
+and load it using `init_config("your-corpus.ini")`.
+
+#### More details
+
 Say, you packaged a number of files into a corpus
 
 ```
@@ -29,7 +43,7 @@ your-corpus
     |- file_4.txt
 ```
 
-and let's assume you made it available as a zip archive at `http://your-website.com/your-corpus.zip`. Using the corpus interface these file can be accessed as follows:
+and let's assume you made it available as a zip archive at `http://your-website.com/your-corpus.zip` (`git` repos and `tar.gz` files are also supported). Without a config file, this corpus can be added and accessed as follows:
 
 ```python
 from corpusinterface import config, load
@@ -61,7 +75,9 @@ reading: ~/corpora/Your Corpus/dir_1/file_4.txt
 
 with `~` being replaced with your home directory (paths might be displayed differently, depending on your operating system).
 
-### Config
+Config files allow you to automate the procedure of adding a corpus and are convenient to provide more detailed information, in particular for other people who want to use your corpus.
+
+### Config files
 
 Instead of specifying the necessary information from within Python, you can also put it in a config file:
 

@@ -8,6 +8,7 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -31,10 +32,10 @@ jobs:
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-#        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-#        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        python -m pytest --cov=CorpusInterface --cov-report=xml --cov-report=html --junitxml=junit/test-results.xml
-        bash <(curl -s https://codecov.io/bash -t 52944b86-d9ac-425e-a1d2-7f270e38a922)
+        python -m pytest --cov=corpusinterface --cov-report=xml --cov-report=html --junitxml=junit/test-results.xml
+        bash <(curl -s https://codecov.io/bash)

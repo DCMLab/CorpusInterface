@@ -76,7 +76,7 @@ def load(corpus=None, **kwargs):
     if path.exists():
         if __LOADER__ in kwargs:
             # extract loader from kwargs
-            loader = kwargs.pop(__LOADER__, None)
+            loader = kwargs[__LOADER__]
             # if string was provided, lookup loader function
             if isinstance(loader, str):
                 try:

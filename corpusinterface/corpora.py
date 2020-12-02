@@ -72,7 +72,7 @@ class FileCorpus(Data):
 
     def metadata(self, *args, **kwargs):
         kwargs = {**self.kwargs, **kwargs}
-        meta_reader = kwargs.pop(self.__META_READER__, None)
+        meta_reader = kwargs.get(self.__META_READER__, None)
         if meta_reader is None:
             return self.path
         else:
@@ -101,7 +101,7 @@ class FileCorpus(Data):
 
     def data(self, *args, **kwargs):
         kwargs = {**self.kwargs, **kwargs}
-        file_reader = kwargs.pop(self.__FILE_READER__, None)
+        file_reader = kwargs.get(self.__FILE_READER__, None)
         for path in self.files():
             if file_reader is None:
                 yield path

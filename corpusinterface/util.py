@@ -36,3 +36,11 @@ class DownloadFailedError(Exception):
 
 class LoadingFailedError(Exception):
     pass
+
+
+class DuplicateCorpusError(Exception):
+    pass
+
+
+class DuplicateDefaultsError(Exception):
+    pass

@@ -88,6 +88,11 @@ def init_config(*args, default=None, home=None, local=None):
         load_config(file)
 
 
+def reset_config(*args, **kwargs):
+    clear_config(clear_default=True)
+    init_config(*args, **kwargs)
+
+
 def load_config(file):
     with open(file) as file:
         config.read_file(file)

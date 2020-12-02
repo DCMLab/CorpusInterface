@@ -240,3 +240,9 @@ def summary(corpus=None, raw=False):
         for key, val in corpus_params(corpus, raw=raw):
             s += f"\n    {key}: {val}"
         return s
+
+
+####################################
+# Initialise config on module import
+####################################
+init_config()

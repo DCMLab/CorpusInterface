@@ -64,7 +64,7 @@ class TestFileCorpus(TestCase):
                                  "tests/FileCorpus/sub_dir/file_4"]), sorted(str(f) for f in corpus.data()))
 
         # custom file_reader
-        def file_reader(path, prefix):
+        def file_reader(path, prefix, **kwargs):
             return f"{prefix}: {path}"
 
         corpus = FileCorpus.init(path="tests/FileCorpus", file_reader=file_reader, prefix="path")
@@ -80,7 +80,7 @@ class TestFileCorpus(TestCase):
         self.assertEqual("tests/FileCorpus", str(corpus.metadata()))
 
         # custom reader
-        def meta_reader(path, prefix):
+        def meta_reader(path, prefix, **kwargs):
             return f"{prefix}: {path}"
 
         corpus = FileCorpus.init(path="tests/FileCorpus", meta_reader=meta_reader, prefix="path")

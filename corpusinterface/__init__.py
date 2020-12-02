@@ -2,4 +2,4 @@
 
 from .loading import remove, load, loaders
 from .corpora import FileCorpus
-from .config import load_config, init_config
+from .config import load_config, init_config, reset_config

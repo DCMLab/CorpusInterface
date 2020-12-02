@@ -16,7 +16,7 @@ class Test(TestCase):
 
     def setUp(self):
         # init and load test corpora into config
-        config.init_config("./tests/test_corpora.ini")
+        config.reset_config("./tests/test_corpora.ini")
         # set default root to test directory
         config.set_default_key_value(config.__ROOT__, str(self.root_path))
 

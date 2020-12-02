@@ -3,26 +3,34 @@ from unittest import TestCase
 from pathlib import Path
 
 from corpusinterface import config
-from corpusinterface.config import init_config, load_config, clear_config, summary, \
+from corpusinterface.config import init_config, reset_config, load_config, clear_config, summary, \
     get, corpora, \
     set, set_key_value, set_default, \
     add_corpus, delete_corpus, corpus_params, getbool
-from corpusinterface.util import CorpusExistsError, CorpusNotFoundError, \
+from corpusinterface.util import CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError, \
     __DEFAULT__, __INFO__, __ROOT__, __PARENT__, __PATH__, __URL__, __ACCESS__, __LOADER__
 
 
 class Test(TestCase):
 
+    def setUp(self):
+        reset_config()
+
+    def tearDown(self):
+        reset_config()
+
     def test_init(self):
         # should always run smoothly
-        init_config()
+        reset_config()
         # expects default config to be there (should work)
+        clear_config(clear_default=True)
         init_config(default=True)
         # expects config file ~/corpora/corpora.ini to be there (should fail on a "clean" system)
+        clear_config(clear_default=True)
         self.assertRaises(FileNotFoundError, lambda: init_config(home=True))
-        # expects config file corpora.ini in current working directory to be there (should work because this happens to
-        # be the default config)
-        init_config(local=True)
+        # expects config file corpora.ini in current working directory to be there
+        clear_config(clear_default=True)
+        self.assertRaises(FileNotFoundError, lambda: init_config(local=True))
 
     def test_load_config(self):
         # assert default config was loaded and DEFULT section is there
@@ -30,7 +38,7 @@ class Test(TestCase):
         # assert the test config was not yet loaded
         self.assertFalse('a test section' in config.config)
         # load it
-        load_config('tests/test_config.ini')
+        load_config('tests/test_config.ini', merge_defaults=True)
         # assert it's there now
         self.assertTrue('a test section' in config.config)
         # assert the multi-line value is correctly parsed
@@ -40,9 +48,19 @@ class Test(TestCase):
         # assert references are correctly parsed
         self.assertEqual('backref to test values\nover multiple lines', config.config['a test section']['and'])
 
+        # assert error for duplicate corpora if only merging defaults
+        self.assertRaises(DuplicateCorpusError, lambda: load_config('tests/test_config.ini', merge_defaults=True))
+        # assert error for duplicate defaults if only merging duplicates
+        self.assertRaises(DuplicateDefaultsError, lambda: load_config('tests/test_config.ini', merge_duplicates=True))
+        # assert loading works if merging both
+        load_config('tests/test_config.ini', merge_duplicates=True, merge_defaults=True)
+
+        # assert both works if there are no duplicates
+        load_config('tests/test_corpora.ini')
+
     def test_get_methods(self):
         # init and load test corpora
-        init_config('tests/test_corpora.ini')
+        reset_config('tests/test_corpora.ini')
         root = Path("~/corpora").expanduser()
         # check get method returns the unprocessed values
         self.assertEqual(None, get("Test Corpus", __INFO__))
@@ -197,10 +215,8 @@ class Test(TestCase):
             self.assertRaises(ValueError, lambda: getbool(val))
 
     def test_clear(self):
-        # init config
-        init_config()
-        # check that there are sections in config
-        self.assertGreater(len(list(config.config)), 1)
+        # check that the default section is there
+        self.assertEqual([config.__DEFAULT__], list(config.config))
         # clear config (don't remove default)
         clear_config()
         # check only config section is left
@@ -211,10 +227,10 @@ class Test(TestCase):
         clear_config(clear_default=True)
         # check its empty now
         self.assertEqual(len(list(config.config[config.__DEFAULT__])), 0)
-        # re-initialise
-        init_config()
-        # check that there are sections in config again
-        self.assertGreater(len(list(config.config)), 1)
+        # reset
+        reset_config()
+        # check that there is the default section in config again
+        self.assertEqual([config.__DEFAULT__], list(config.config))
 
     def test_summary(self):
         clear_config(clear_default=True)

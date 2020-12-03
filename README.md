@@ -18,8 +18,8 @@ Basic functionality to maintain and load corpora.
 
 A number of are available in the two following config files:
 
-- [DCML_corpora.ini](https://github.com/DCMLab/corpusinterface/blob/master/DCML_corpora.ini): contains corpora maintained by the DCML. Some of these are not publicly accessible so downloading them will fail. Please, contact us at <dcml@epfl.ch> to request access.
-- [external_corpora.ini](https://github.com/DCMLab/corpusinterface/blob/master/external_corpora.ini): contains external corpora that are not maintained by the DCML.
+- [DCML_corpora.ini](DCML_corpora.ini): contains corpora maintained by the DCML. Some of these are not publicly accessible so downloading them will fail. Please, contact us at <dcml@epfl.ch> to request access.
+- [external_corpora.ini](external_corpora.ini): contains external corpora that are not maintained by the DCML.
 
 Here are some references with more corpora (some of which are also in the config files from above):
 

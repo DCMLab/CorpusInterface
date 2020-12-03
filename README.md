@@ -14,6 +14,18 @@ Basic functionality to maintain and load corpora.
 
 `pip install corpusinterface`
 
+## Corpora
+
+A number of are available in the two following config files:
+
+- [DCML_corpora.ini](https://github.com/DCMLab/corpusinterface/blob/master/DCML_corpora.ini): contains corpora maintained by the DCML. Some of these are not publicly accessible so downloading them will fail. Please, contact us at <dcml@epfl.ch> to request access.
+- [external_corpora.ini](https://github.com/DCMLab/corpusinterface/blob/master/external_corpora.ini): contains external corpora that are not maintained by the DCML.
+
+Here are some references with more corpora (some of which are also in the config files from above):
+
+- https://github.com/dharasim/MCR/wiki
+- https://github.com/ismir/mir-datasets
+
 ## Managing Corpora
 
 ### Adding your own corpus

@@ -127,7 +127,7 @@ class SingleFileCorpus(Data):
         if not self.path.exists():
             raise FileNotFoundError(f"Corpus file {self.path} does not exist")
         elif not self.path.is_file():
-            raise NotADirectoryError(f"{self.path} is not a file")
+            raise IsADirectoryError(f"{self.path} is not a file")
 
         # remember additional keyword arguments
         self.kwargs = kwargs
@@ -150,6 +150,7 @@ class JSONFileCorpus(SingleFileCorpus):
     """A corpus consisting of a single JSON file."""
 
     def data(self, *args, **kwargs):
+        kwargs = {**self.kwargs, **kwargs}
         # *args are ignored but catch arguments for convenience
         with open(self.path, 'r') as f:
             return json.load(f, **kwargs)
@@ -157,5 +158,6 @@ class JSONFileCorpus(SingleFileCorpus):
 class CSVFileCorpus(SingleFileCorpus):
     """A corpus consisting of a single TSV/CSV file."""
 
-    def data(self, *args, sep=',', **kwargs):
-        return pandas.read_csv(self.path, sep=sep, **kwargs)
+    def data(self, *args, **kwargs):
+        kwargs = {**self.kwargs, **kwargs}
+        return pandas.read_csv(self.path, **kwargs)

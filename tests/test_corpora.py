@@ -1,8 +1,8 @@
 #  Copyright (c) 2020 Robert Lieck
 from unittest import TestCase
+from pathlib import Path
 
-from corpusinterface.corpora import Data, FileCorpus
-
+from corpusinterface.corpora import Data, FileCorpus, SingleFileCorpus, JSONFileCorpus, CSVFileCorpus
 
 class TestData(TestCase):
 
@@ -90,3 +90,37 @@ class TestFileCorpus(TestCase):
                                  "tests/FileCorpus/sub_dir/file_3",
                                  "tests/FileCorpus/sub_dir/file_4"]), sorted(str(f) for f in corpus.data()))
 
+class TestSingleFileCorpus(TestCase):
+
+    def test_init(self):
+        self.assertRaises(TypeError, lambda: SingleFileCorpus())
+        self.assertRaises(TypeError, lambda: SingleFileCorpus(path='tests/SingleFileCorpora'))
+        self.assertRaises(FileNotFoundError, lambda: SingleFileCorpus(path='tests/DoesNotExist', file='corpus.json'))
+        self.assertRaises(IsADirectoryError, lambda: SingleFileCorpus(path='tests/SingleFileCorpora', file='.'))
+        sfc = SingleFileCorpus('tests/SingleFileCorpora', 'corpus.json')
+        fn = f"{Path.cwd()}/tests/SingleFileCorpora/corpus.json"
+        self.assertEqual(f"SingleFileCorpus({fn})", str(sfc))
+        assert [Path(fn)] == sfc.files()
+        assert Path(fn) == sfc.data()
+
+    def test_json(self):
+        json_corpus = JSONFileCorpus('tests/SingleFileCorpora', 'corpus.json')
+        self.assertEqual([{'name': 'piece1', 'notes': ['c', 'e']}, {'name': 'piece2', 'notes': ['e', 'g']}], json_corpus.data())
+
+    def test_csv(self):
+        csv_corpus = CSVFileCorpus('tests/SingleFileCorpora', 'corpus.csv')
+        df = csv_corpus.data()
+        self.assertEqual(['piece1', 'piece1', 'piece2', 'piece2'], list(df['piece']))
+        self.assertEqual(['c', 'e', 'e', 'g'], list(df['note']))
+
+    def test_tsv(self):
+        # test loading with pre-set separator
+        tsv_corpus = CSVFileCorpus('tests/SingleFileCorpora', 'corpus.tsv', sep='\t')
+        df = tsv_corpus.data()
+        self.assertEqual(['piece1', 'piece1', 'piece2', 'piece2'], list(df['piece']))
+        self.assertEqual(['c', 'e', 'e', 'g'], list(df['note']))
+
+        # test loading with ad-hoc separator
+        tsv_corpus2 = CSVFileCorpus('tests/SingleFileCorpora', 'corpus.tsv')
+        df2 = tsv_corpus2.data(sep='\t')
+        assert df.equals(df2)

@@ -144,7 +144,7 @@ class SingleFileCorpus(Data):
         if file_reader is None:
             return self.path
         else:
-            return file_reader(path, *args, **kwargs)
+            return file_reader(self.path, *args, **kwargs)
 
 class JSONFileCorpus(SingleFileCorpus):
     """A corpus consisting of a single JSON file."""

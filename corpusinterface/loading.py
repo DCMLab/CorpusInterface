@@ -9,16 +9,18 @@ from shutil import rmtree
 import git
 
 from . import config
-from .corpora import FileCorpus
+from .corpora import FileCorpus, SingleFileCorpus, JSONFileCorpus, CSVFileCorpus
 from .util import __DOWNLOAD__, __ACCESS__, __LOADER__, __URL__, \
     CorpusNotFoundError, DownloadFailedError, LoadingFailedError
 
 
 # dictionary with loader functions
 loaders = {
-    "FileCorpus": FileCorpus.init
+    "FileCorpus": FileCorpus.init,
+    "SingleFileCorpus": SingleFileCorpus,
+    "JSONFileCorpus": JSONFileCorpus,
+    "CSVFileCorpus": CSVFileCorpus,
 }
-
 
 def populate_kwargs(corpus, kwargs_dict):
     if corpus is not None:

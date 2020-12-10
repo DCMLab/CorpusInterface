@@ -2,7 +2,8 @@
 from pathlib import Path
 import os
 import re
-
+import json
+import pandas
 
 class Data:
     """An abstract base class for data items, such as corpora or documents."""
@@ -107,3 +108,54 @@ class FileCorpus(Data):
                 yield path
             else:
                 yield file_reader(path, *args, **kwargs)
+
+# single file corpora
+# -------------------
+
+class SingleFileCorpus(Data):
+    """A corpus consisting of a single file, superclass for different file types."""
+
+    def __init__(self, path=None, file=None, **kwargs):
+        # check if path and file are supplied
+        if path is None:
+            raise TypeError("Missing required key 'path'")
+        if file is None:
+            raise TypeError("Missing required key 'file'")
+
+        # register path to file and check if exists
+        self.path = Path(path).resolve() / Path(file)
+        if not self.path.exists():
+            raise FileNotFoundError(f"Corpus file {self.path} does not exist")
+        elif not self.path.is_file():
+            raise NotADirectoryError(f"{self.path} is not a file")
+
+        # remember additional keyword arguments
+        self.kwargs = kwargs
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.path})"
+
+    def files(self):
+        return [self.path]
+
+    def data(self, *args, **kwargs):
+        kwargs = {**self.kwargs, **kwargs}
+        file_reader = kwargs.get('file_reader', None)
+        if file_reader is None:
+            return self.path
+        else:
+            return file_reader(path, *args, **kwargs)
+
+class JSONFileCorpus(SingleFileCorpus):
+    """A corpus consisting of a single JSON file."""
+
+    def data(self, *args, **kwargs):
+        # *args are ignored but catch arguments for convenience
+        with open(self.path, 'r') as f:
+            return json.load(f, **kwargs)
+
+class CSVFileCorpus(SingleFileCorpus):
+    """A corpus consisting of a single TSV/CSV file."""
+
+    def data(self, *args, sep=',', **kwargs):
+        return pandas.read_csv(self.path, sep=sep, **kwargs)

@@ -144,6 +144,7 @@ class SingleFileCorpus(Data):
         if file_reader is None:
             return self.path
         else:
+            del kwargs['file_reader']
             return file_reader(self.path, *args, **kwargs)
 
 class JSONFileCorpus(SingleFileCorpus):

@@ -1,6 +1,7 @@
 #  Copyright (c) 2020 Robert Lieck
 from unittest import TestCase
 from pathlib import Path
+import json
 
 from corpusinterface.corpora import Data, FileCorpus, SingleFileCorpus, JSONFileCorpus, CSVFileCorpus
 
@@ -102,6 +103,14 @@ class TestSingleFileCorpus(TestCase):
         self.assertEqual(f"SingleFileCorpus({fn})", str(sfc))
         assert [Path(fn)] == sfc.files()
         assert Path(fn) == sfc.data()
+
+    def test_generic(self):
+        sf_corpus = SingleFileCorpus('tests/SingleFileCorpora', 'corpus.json')
+        def json_reader(fp):
+            with open(fp, 'r') as f:
+                return json.load(f)
+        data = sf_corpus.data(file_reader=json_reader)
+        assert [{'name': 'piece1', 'notes': ['c', 'e']}, {'name': 'piece2', 'notes': ['e', 'g']}] == data
 
     def test_json(self):
         json_corpus = JSONFileCorpus('tests/SingleFileCorpora', 'corpus.json')

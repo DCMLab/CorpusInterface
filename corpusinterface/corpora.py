@@ -140,11 +140,10 @@ class SingleFileCorpus(Data):
 
     def data(self, *args, **kwargs):
         kwargs = {**self.kwargs, **kwargs}
-        file_reader = kwargs.get('file_reader', None)
+        file_reader = kwargs.pop('file_reader', None)
         if file_reader is None:
             return self.path
         else:
-            del kwargs['file_reader']
             return file_reader(self.path, *args, **kwargs)
 
 class JSONFileCorpus(SingleFileCorpus):

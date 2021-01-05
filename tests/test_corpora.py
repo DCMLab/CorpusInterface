@@ -130,6 +130,11 @@ class TestSingleFileCorpus(TestCase):
         self.assertEqual(['c', 'e', 'e', 'g'], list(df['note']))
 
         # test loading with ad-hoc separator
-        tsv_corpus2 = CSVFileCorpus('tests/SingleFileCorpora', 'corpus.tsv')
-        df2 = tsv_corpus2.data(sep='\t')
-        assert df.equals(df2)
+        tsv_corpus_ad_hoc = CSVFileCorpus('tests/SingleFileCorpora', 'corpus.tsv')
+        df_ad_hoc = tsv_corpus_ad_hoc.data(sep='\t')
+        assert df.equals(df_ad_hoc)
+
+        # test loading with escaped separator
+        tsv_corpus_esc = CSVFileCorpus('tests/SingleFileCorpora', 'corpus.tsv', sep='"\t"')
+        df_esc = tsv_corpus_esc.data()
+        assert df.equals(df_esc)

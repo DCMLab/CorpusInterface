@@ -4,6 +4,7 @@ import os
 import re
 import json
 import pandas
+import ast
 
 class Data:
     """An abstract base class for data items, such as corpora or documents."""
@@ -113,9 +114,16 @@ class FileCorpus(Data):
 # -------------------
 
 class SingleFileCorpus(Data):
-    """A corpus consisting of a single file, superclass for different file types."""
+    """
+    A corpus consisting of a single file, superclass for different file types.
+    
+    Can be loaded using its constructor, which takes the arguments path, file, and corpus_kwargs.
+    path and file refer to the path of corpus directory and the single file containing the data respectively.
+    corpus_kwargs contains any keyword arguments that should be used for reading the data,
+    e.g. the file_reader and its arguments.
+    """
 
-    def __init__(self, path=None, file=None, **kwargs):
+    def __init__(self, path=None, file=None, corpus_kwargs={}, **kwargs):
         # check if path and file are supplied
         if path is None:
             raise TypeError("Missing required key 'path'")
@@ -130,7 +138,7 @@ class SingleFileCorpus(Data):
             raise IsADirectoryError(f"{self.path} is not a file")
 
         # remember additional keyword arguments
-        self.kwargs = kwargs
+        self.kwargs = corpus_kwargs
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.path})"
@@ -158,6 +166,16 @@ class JSONFileCorpus(SingleFileCorpus):
 class CSVFileCorpus(SingleFileCorpus):
     """A corpus consisting of a single TSV/CSV file."""
 
+    def __init__(self, *args, sep=',', **kwargs):
+        # initialize single file corpus normally
+        super().__init__(*args, **kwargs)
+
+        # read the separator (this should become unnecessary when switching to JSON/YAML configs)
+        if sep[0] == '"' or sep[0] == "'":
+            sep = ast.literal_eval(sep)
+        # remember the separator
+        self.sep = sep
+
     def data(self, *args, **kwargs):
-        kwargs = {**self.kwargs, **kwargs}
+        kwargs = {**self.kwargs, "sep": self.sep, **kwargs}
         return pandas.read_csv(self.path, **kwargs)

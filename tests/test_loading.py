@@ -39,7 +39,9 @@ class Test(TestCase):
                        "testcorpus-zip",
                        "testcorpus-tar.gz",
                        "testcorpus-file",
-                       "testcorpus-gz"]:
+                       "testcorpus-gz",
+                       "testcorpus-xz",
+                       "testcorpus-bz2"]:
             # check with custom access function (raises and leaves directory empty)
             self.assertRaises(AccessCheck, lambda: download(corpus, access=access))
             # check bad access method

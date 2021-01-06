@@ -4,6 +4,7 @@ from urllib.request import urlretrieve
 from urllib.error import URLError, HTTPError
 import tarfile
 import zipfile
+import gzip
 import shutil
 
 import git
@@ -122,6 +123,7 @@ __KNOWN_ACCESS_METHODS__ = [
     'zip',
     'tar.gz',
     'file',
+    'gz',
 ]
 
 def download(corpus, **kwargs):
@@ -144,7 +146,7 @@ def download(corpus, **kwargs):
             if access == 'git':
                 # clone directly into the target directory
                 git.Repo.clone_from(url=kwargs[__URL__], to_path=path)
-            elif access in ['zip', 'tar.gz', 'file']:
+            elif access in ['zip', 'tar.gz', 'file', 'gz']:
                 # download to temporary file
                 url = kwargs[__URL__]
                 try:
@@ -162,6 +164,11 @@ def download(corpus, **kwargs):
                 elif access == 'file':
                     target = path / kwargs[__FILE__]
                     shutil.copy(tmp_file_name, target)
+                elif access == 'gz':
+                    target = path / kwargs[__FILE__]
+                    with gzip.open(tmp_file_name, 'rb') as f_in:
+                        with open(target, 'wb') as f_out:
+                            shutil.copyfileobj(f_in, f_out)
             elif callable(access):
                 # access is a callable
                 create_download_path(corpus, kwargs)

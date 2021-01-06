@@ -38,7 +38,8 @@ class Test(TestCase):
                        # "testcorpus-git-ssh",  # does not work in GitHub action
                        "testcorpus-zip",
                        "testcorpus-tar.gz",
-                       "testcorpus-file"]:
+                       "testcorpus-file",
+                       "testcorpus-gz"]:
             # check with custom access function (raises and leaves directory empty)
             self.assertRaises(AccessCheck, lambda: download(corpus, access=access))
             # check bad access method

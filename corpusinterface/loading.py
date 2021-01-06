@@ -10,7 +10,7 @@ import shutil
 import git
 
 from . import config
-from .corpora import FileCorpus, SingleFileCorpus, JSONFileCorpus, CSVFileCorpus
+from .corpora import FileCorpus, SingleFileCorpus, JSONFileCorpus, JSONLinesFileCorpus, CSVFileCorpus
 from .util import __DOWNLOAD__, __ACCESS__, __LOADER__, __URL__, __FILE__, \
     CorpusNotFoundError, DownloadFailedError, LoadingFailedError
 
@@ -20,6 +20,7 @@ loaders = {
     "FileCorpus": FileCorpus.init,
     "SingleFileCorpus": SingleFileCorpus,
     "JSONFileCorpus": JSONFileCorpus,
+    "JSONLinesFileCorpus": JSONLinesFileCorpus,
     "CSVFileCorpus": CSVFileCorpus,
 }
 

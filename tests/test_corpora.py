@@ -3,7 +3,7 @@ from unittest import TestCase
 from pathlib import Path
 import json
 
-from corpusinterface.corpora import Data, FileCorpus, SingleFileCorpus, JSONFileCorpus, CSVFileCorpus
+from corpusinterface.corpora import Data, FileCorpus, SingleFileCorpus, JSONFileCorpus, JSONLinesFileCorpus, CSVFileCorpus
 
 class TestData(TestCase):
 
@@ -115,6 +115,10 @@ class TestSingleFileCorpus(TestCase):
     def test_json(self):
         json_corpus = JSONFileCorpus('tests/SingleFileCorpora', 'corpus.json')
         self.assertEqual([{'name': 'piece1', 'notes': ['c', 'e']}, {'name': 'piece2', 'notes': ['e', 'g']}], json_corpus.data())
+        
+    def test_jsonl(self):
+        jsonl_corpus = JSONLinesFileCorpus('tests/SingleFileCorpora', 'corpus.jsonl')
+        self.assertEqual([{'name': 'piece1', 'notes': ['c', 'e']}, {'name': 'piece2', 'notes': ['e', 'g']}], jsonl_corpus.data())
 
     def test_csv(self):
         csv_corpus = CSVFileCorpus('tests/SingleFileCorpora', 'corpus.csv')

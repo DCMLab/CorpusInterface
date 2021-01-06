@@ -163,6 +163,14 @@ class JSONFileCorpus(SingleFileCorpus):
         with open(self.path, 'r') as f:
             return json.load(f, **kwargs)
 
+class JSONLinesFileCorpus(SingleFileCorpus):
+    """A corpus consisting of a single JSONL file."""
+
+    def data(self, *args, **kwargs):
+        kwargs = {**self.kwargs, **kwargs}
+        with open(self.path, 'r') as f:
+            return [json.loads(line) for line in f]
+
 class CSVFileCorpus(SingleFileCorpus):
     """A corpus consisting of a single TSV/CSV file."""
 

@@ -37,7 +37,11 @@ class Test(TestCase):
         for corpus in ["testcorpus-git-http",
                        # "testcorpus-git-ssh",  # does not work in GitHub action
                        "testcorpus-zip",
-                       "testcorpus-tar.gz"]:
+                       "testcorpus-tar.gz",
+                       "testcorpus-file",
+                       "testcorpus-gz",
+                       "testcorpus-xz",
+                       "testcorpus-bz2"]:
             # check with custom access function (raises and leaves directory empty)
             self.assertRaises(AccessCheck, lambda: download(corpus, access=access))
             # check bad access method
@@ -54,6 +58,7 @@ class Test(TestCase):
         self.assertRaises(DownloadFailedError,
                           lambda: download(None,
                                            access="zip",
+                                           path="/tmp/corpus-interface-test-dir-nonsense/",
                                            url="http://some-bad-url-that-skrews-up-the-tests.com/corpus.zip"))
 
     def test_download_from_child(self):

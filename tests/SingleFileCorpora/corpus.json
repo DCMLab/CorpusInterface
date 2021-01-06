@@ -1,0 +1,10 @@
+[
+    {
+        "name": "piece1",
+        "notes": ["c", "e"]
+    },
+    {
+        "name": "piece2",
+        "notes": ["e", "g"]
+    }
+]

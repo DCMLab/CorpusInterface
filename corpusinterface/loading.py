@@ -4,13 +4,13 @@ from urllib.request import urlretrieve
 from urllib.error import URLError, HTTPError
 import tarfile
 import zipfile
-from shutil import rmtree
+import shutil
 
 import git
 
 from . import config
 from .corpora import FileCorpus, SingleFileCorpus, JSONFileCorpus, CSVFileCorpus
-from .util import __DOWNLOAD__, __ACCESS__, __LOADER__, __URL__, \
+from .util import __DOWNLOAD__, __ACCESS__, __LOADER__, __URL__, __FILE__, \
     CorpusNotFoundError, DownloadFailedError, LoadingFailedError
 
 
@@ -58,7 +58,7 @@ def remove(corpus, silent=False, not_exists_ok=False, not_dir_ok=False, **kwargs
         rm = True
     # remove
     if rm:
-        rmtree(path)
+        shutil.rmtree(path)
     else:
         print(f"Canceled. Corpus '{corpus}' ({path}) not removed.")
 
@@ -117,6 +117,12 @@ def create_download_path(corpus, kwargs):
         path.mkdir(parents=True)
     return path
 
+__KNOWN_ACCESS_METHODS__ = [
+    'git',
+    'zip',
+    'tar.gz',
+    'file',
+]
 
 def download(corpus, **kwargs):
     if corpus is not None and config.get(corpus, config.__PARENT__) is not None:
@@ -127,35 +133,40 @@ def download(corpus, **kwargs):
         kwargs = populate_kwargs(corpus, kwargs)
         # get access method
         access = kwargs[__ACCESS__]
+        # check if method is known
+        if access in __KNOWN_ACCESS_METHODS__ or callable(access):
+            path = create_download_path(corpus, kwargs)
+        else:
+            raise DownloadFailedError(f"Unknown access method '{access}'")
+
         # use known access method or provided callable
-        if access in ["git", "zip", "tar.gz"]:
-            # known access method
+        try:
             if access == 'git':
                 # clone directly into the target directory
-                path = create_download_path(corpus, kwargs)
                 git.Repo.clone_from(url=kwargs[__URL__], to_path=path)
-            else:
+            elif access in ['zip', 'tar.gz', 'file']:
                 # download to temporary file
                 url = kwargs[__URL__]
                 try:
                     # urlopen(url)
-                    tmp_file_name, _ = urlretrieve(url=url)
+                    tmp_file_name, _ = urlretrieve(url=url) # TODO: urlretrieve may be deprecated
                 except (HTTPError, URLError) as e:
                     raise DownloadFailedError(f"Opening url '{url}' failed: {e}")
                 # open with custom method
                 if access == 'tar.gz':
-                    tmp_file = tarfile.open(tmp_file_name, "r:gz")
-                else:
-                    assert access == 'zip'
-                    tmp_file = zipfile.ZipFile(tmp_file_name)
-                # unpack to target directory
-                path = create_download_path(corpus, kwargs)
-                tmp_file.extractall(path)
-                tmp_file.close()
-        elif callable(access):
-            # access is a callable
-            create_download_path(corpus, kwargs)
-            return access(corpus, **kwargs)
-        else:
-            # unknown access method
-            raise DownloadFailedError(f"Unknown access method '{kwargs[__ACCESS__]}'")
+                    with tarfile.open(tmp_file_name, "r:gz") as tmp_file:
+                        tmp_file.extractall(path)
+                elif access == 'zip':
+                    with zipfile.ZipFile(tmp_file_name) as tmp_file:
+                        tmp_file.extractall(path)
+                elif access == 'file':
+                    target = path / kwargs[__FILE__]
+                    shutil.copy(tmp_file_name, target)
+            elif callable(access):
+                # access is a callable
+                create_download_path(corpus, kwargs)
+                return access(corpus, **kwargs)
+        except:
+            # clean up the target directory
+            shutil.rmtree(path)
+            raise

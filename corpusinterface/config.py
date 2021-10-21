@@ -70,8 +70,8 @@ config = _get_config_obj()
 ##############################################################
 
 def init_config(*args, default=None, home=None, local=None):
-    # default config that is part of the package (located one level up in the directory tree)
-    default_file = Path(__file__).parents[1] / 'default_config.ini'
+    # default config that is part of the package (located on the same level as this file)
+    default_file = Path(__file__).parents[0] / 'default_config.ini'
     if default:
         load_config(default_file)
     elif default is None:

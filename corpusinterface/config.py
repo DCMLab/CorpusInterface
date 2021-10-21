@@ -14,6 +14,52 @@ python_set = set
 __all__ = []
 
 
+#############################################
+# default paths and functions to get/set them
+#############################################
+
+__DEFAULT_default_root_dir__ = Path("~/corpora").expanduser()
+
+__default_root_dir__ = __DEFAULT_default_root_dir__
+
+__DEFAULT_default_config_dir__ = None
+
+__default_config_dir__ = __DEFAULT_default_config_dir__
+
+__default_config_dir_suffix__ = "config"
+
+
+def get_default_root_dir():
+    return __default_root_dir__
+
+
+def set_default_root_dir(dir):
+    global __default_root_dir__
+    __default_root_dir__ = Path(dir).expanduser()
+
+
+def reset_default_root_dir():
+    global __default_root_dir__
+    __default_root_dir__ = __DEFAULT_default_root_dir__
+
+
+def get_default_config_dir():
+    if __default_config_dir__ is None:
+        return __default_root_dir__ / __default_config_dir_suffix__
+    else:
+        return __default_config_dir__
+
+
+def set_default_config_dir(dir):
+    global __default_config_dir__
+    __default_config_dir__ = Path(dir).expanduser()
+
+
+def reset_default_config_dir():
+    global __default_config_dir__
+    __default_config_dir__ = __DEFAULT_default_config_dir__
+
+
 ##################
 # helper functions
 ##################
@@ -77,12 +123,15 @@ def init_config(*args, default=None, home=None, local=None):
     elif default is None:
         config.read(default_file)
 
-    # config file in user home/corpora directory
-    home_file = Path("~/corpora/corpora.ini").expanduser()
-    if home:
-        load_config(home_file)
-    elif home is None:
-        config.read(home_file)
+    # config files in default config directory
+    if home or home is None:
+        found_config = False
+        for path in get_default_config_dir().glob('*.ini'):
+            config.read(path)
+            found_config = True
+        if home and not found_config:
+            raise FileNotFoundError(f"Could not find any config files (*.ini) in directory "
+                                    f"'{get_default_config_dir()}'")
 
     # config file in current working directory
     local_file = 'corpora.ini'
@@ -208,7 +257,10 @@ def _get(corpus, key, raw=False, _first_call=False):
                 root = _get(parent, __PATH__)
             else:
                 root = config[_corpus_to_str(corpus)][__ROOT__]
-                root = Path(root).expanduser()
+                if root is None:
+                    root = get_default_root_dir()
+                else:
+                    root = Path(root).expanduser()
             if not root.is_absolute():
                 warn(f"Root for corpus '{corpus}' is a relative path ('{root}'), "
                      f"which is interpreted relative to the current "

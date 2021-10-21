@@ -15,9 +15,13 @@ class Test(TestCase):
 
     def setUp(self):
         reset_config()
+        config.reset_default_root_dir()
+        config.reset_default_config_dir()
 
     def tearDown(self):
         reset_config()
+        config.reset_default_root_dir()
+        config.reset_default_config_dir()
 
     def test_init(self):
         # should always run smoothly
@@ -31,9 +35,12 @@ class Test(TestCase):
         # expects config file corpora.ini in current working directory to be there
         clear_config(clear_default=True)
         self.assertRaises(FileNotFoundError, lambda: init_config(local=True))
+        # set default config directory to test directory, which contains several *.ini files
+        config.set_default_config_dir(Path(__file__).parents[0])
+        init_config(home=True)
 
     def test_load_config(self):
-        # assert default config was loaded and DEFULT section is there
+        # assert default config was loaded and DEFAULT section is there
         self.assertTrue(__DEFAULT__ in config.config)
         # assert the test config was not yet loaded
         self.assertFalse('a test section' in config.config)
@@ -61,7 +68,7 @@ class Test(TestCase):
     def test_get_methods(self):
         # init and load test corpora
         reset_config('tests/test_corpora.ini')
-        root = Path("~/corpora").expanduser()
+        root = config.get_default_root_dir()
         # check get method returns the unprocessed values
         self.assertEqual(None, get("Test Corpus", __INFO__))
         self.assertEqual(root, get("Test Corpus", __ROOT__))
@@ -82,7 +89,7 @@ class Test(TestCase):
                          f"    {__LOADER__}: FileCorpus", summary("Test Corpus"))
         self.assertEqual("[Test Corpus]\n"
                          f"    {__INFO__}: None\n"
-                         f"    {__ROOT__}: ~/corpora\n"
+                         f"    {__ROOT__}: None\n"
                          f"    {__PATH__}: None\n"
                          f"    {__PARENT__}: None\n"
                          f"    {__ACCESS__}: None\n"
@@ -249,3 +256,21 @@ class Test(TestCase):
     def test_cycles(self):
         config.reset_config('tests/cycle_config.ini')
         self.assertRaises(ConfigCycleError, lambda: config.summary())
+
+    def test_default_dirs(self):
+        self.assertEqual(config.get_default_root_dir(), Path("~/corpora").expanduser())
+        self.assertEqual(config.get_default_config_dir(), Path("~/corpora/config").expanduser())
+
+        config.set_default_root_dir("/some/other/path")
+        self.assertEqual(config.get_default_root_dir(), Path("/some/other/path"))
+        self.assertEqual(config.get_default_config_dir(), Path("/some/other/path/config"))
+
+        config.set_default_config_dir("/special/config/dir")
+        self.assertEqual(config.get_default_config_dir(), Path("/special/config/dir"))
+
+        config.reset_default_config_dir()
+        self.assertEqual(config.get_default_config_dir(), Path("/some/other/path/config"))
+
+        config.reset_default_root_dir()
+        self.assertEqual(config.get_default_root_dir(), Path("~/corpora").expanduser())
+        self.assertEqual(config.get_default_config_dir(), Path("~/corpora/config").expanduser())

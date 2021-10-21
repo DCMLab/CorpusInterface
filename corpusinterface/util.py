@@ -44,3 +44,7 @@ class DuplicateCorpusError(Exception):
 
 class DuplicateDefaultsError(Exception):
     pass
+
+
+class ConfigCycleError(Exception):
+    pass

@@ -15,7 +15,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/DCMLab/corpusinterface",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['tests']),
     install_requires=install_requires,
     include_package_data=True,
     classifiers=[

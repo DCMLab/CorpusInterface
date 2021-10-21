@@ -1,6 +1,7 @@
 #  Copyright (c) 2020 Robert Lieck
 from unittest import TestCase
 from pathlib import Path
+import shutil
 
 from corpusinterface import config
 from corpusinterface.config import init_config, reset_config, load_config, clear_config, summary, \
@@ -8,6 +9,7 @@ from corpusinterface.config import init_config, reset_config, load_config, clear
     set, set_key_value, set_default, \
     add_corpus, delete_corpus, corpus_params, getbool
 from corpusinterface.util import CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError, \
+    ConfigCycleError, DownloadFailedError, \
     __DEFAULT__, __INFO__, __ROOT__, __PARENT__, __PATH__, __URL__, __ACCESS__, __LOADER__
 
 
@@ -15,9 +17,13 @@ class Test(TestCase):
 
     def setUp(self):
         reset_config()
+        config.reset_default_root_dir()
+        config.reset_default_config_dir()
 
     def tearDown(self):
         reset_config()
+        config.reset_default_root_dir()
+        config.reset_default_config_dir()
 
     def test_init(self):
         # should always run smoothly
@@ -31,9 +37,12 @@ class Test(TestCase):
         # expects config file corpora.ini in current working directory to be there
         clear_config(clear_default=True)
         self.assertRaises(FileNotFoundError, lambda: init_config(local=True))
+        # set default config directory to test directory, which contains several *.ini files
+        config.set_default_config_dir(Path(__file__).parents[0])
+        init_config(home=True)
 
     def test_load_config(self):
-        # assert default config was loaded and DEFULT section is there
+        # assert default config was loaded and DEFAULT section is there
         self.assertTrue(__DEFAULT__ in config.config)
         # assert the test config was not yet loaded
         self.assertFalse('a test section' in config.config)
@@ -58,10 +67,47 @@ class Test(TestCase):
         # assert both works if there are no duplicates
         load_config('tests/test_corpora.ini')
 
+    def test_download_config(self):
+        # get summary of default config for later checking, then clear
+        summary = config.summary()
+        config.clear_config(clear_default=True)
+        empty_summary = config.summary()
+        self.assertNotEqual(summary, empty_summary)
+        # new config dir
+        config_dir = Path(__file__).parents[0] / "config"
+        # make sure it does not already exists and use
+        self.assertFalse(config_dir.exists())
+        config.set_default_config_dir(config_dir)
+        # bad URL should raise error
+        self.assertRaises(DownloadFailedError,
+                          lambda: config.download_config(url="https://bad/url/", name="default_config.ini"))
+        # download default config
+        url = "https://raw.githubusercontent.com/DCMLab/corpusinterface/master/corpusinterface/default_config.ini"
+        config.download_config(url=url, name="default_config.ini")
+        # check it is there
+        self.assertTrue((config.get_default_config_dir() / "default_config.ini").exists())
+        # check is was not loaded
+        self.assertEqual(config.summary(), empty_summary)
+        # try to download again to same path (should fail)
+        self.assertRaises(FileExistsError, lambda: config.download_config(url=url,
+                                                                          name="default_config.ini",
+                                                                          dir=config_dir))
+        # try to download again to different path and also load
+        config.download_config(url=url, name="default_config.ini", dir=config_dir / "subdir", load=True)
+        self.assertEqual(config.summary(), summary)
+        # clear config and only load from home/default to make sure the file is now loaded automatically
+        clear_config(clear_default=True)
+        self.assertEqual(config.summary(), empty_summary)
+        init_config(default=False, local=False, home=True)
+        self.assertEqual(config.summary(), summary)
+        # remove new config dir again
+        shutil.rmtree(config_dir)
+
+
     def test_get_methods(self):
         # init and load test corpora
         reset_config('tests/test_corpora.ini')
-        root = Path("~/corpora").expanduser()
+        root = config.get_default_root_dir()
         # check get method returns the unprocessed values
         self.assertEqual(None, get("Test Corpus", __INFO__))
         self.assertEqual(root, get("Test Corpus", __ROOT__))
@@ -82,7 +128,7 @@ class Test(TestCase):
                          f"    {__LOADER__}: FileCorpus", summary("Test Corpus"))
         self.assertEqual("[Test Corpus]\n"
                          f"    {__INFO__}: None\n"
-                         f"    {__ROOT__}: ~/corpora\n"
+                         f"    {__ROOT__}: None\n"
                          f"    {__PATH__}: None\n"
                          f"    {__PARENT__}: None\n"
                          f"    {__ACCESS__}: None\n"
@@ -245,3 +291,25 @@ class Test(TestCase):
                          "    and: backref to test values\n"
                          "over multiple lines\n"
                          "    default_key: default_value", summary())
+
+    def test_cycles(self):
+        config.reset_config('tests/cycle_config.ini')
+        self.assertRaises(ConfigCycleError, lambda: config.summary())
+
+    def test_default_dirs(self):
+        self.assertEqual(config.get_default_root_dir(), Path("~/corpora").expanduser())
+        self.assertEqual(config.get_default_config_dir(), Path("~/corpora/config").expanduser())
+
+        config.set_default_root_dir("/some/other/path")
+        self.assertEqual(config.get_default_root_dir(), Path("/some/other/path"))
+        self.assertEqual(config.get_default_config_dir(), Path("/some/other/path/config"))
+
+        config.set_default_config_dir("/special/config/dir")
+        self.assertEqual(config.get_default_config_dir(), Path("/special/config/dir"))
+
+        config.reset_default_config_dir()
+        self.assertEqual(config.get_default_config_dir(), Path("/some/other/path/config"))
+
+        config.reset_default_root_dir()
+        self.assertEqual(config.get_default_root_dir(), Path("~/corpora").expanduser())
+        self.assertEqual(config.get_default_config_dir(), Path("~/corpora/config").expanduser())

@@ -2,9 +2,12 @@
 import configparser
 from pathlib import Path
 from warnings import warn
+from urllib.request import urlretrieve
+from urllib.error import URLError, HTTPError
+import shutil
 
-from .util import __DEFAULT__, __ROOT__, __PARENT__, __PATH__, \
-    CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError
+from .util import __DEFAULT__, __ROOT__, __PARENT__, __PATH__, DownloadFailedError, \
+    CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError, ConfigCycleError
 
 # remember built-in set
 python_set = set
@@ -12,6 +15,52 @@ python_set = set
 # no imports with 'import config *'
 # this is primarily to avoid unintentional overwriting of built-in 'set' with config.set
 __all__ = []
+
+
+#############################################
+# default paths and functions to get/set them
+#############################################
+
+__DEFAULT_default_root_dir__ = Path("~/corpora").expanduser()
+
+__default_root_dir__ = __DEFAULT_default_root_dir__
+
+__DEFAULT_default_config_dir__ = None
+
+__default_config_dir__ = __DEFAULT_default_config_dir__
+
+__default_config_dir_suffix__ = "config"
+
+
+def get_default_root_dir():
+    return __default_root_dir__
+
+
+def set_default_root_dir(dir):
+    global __default_root_dir__
+    __default_root_dir__ = Path(dir).expanduser()
+
+
+def reset_default_root_dir():
+    global __default_root_dir__
+    __default_root_dir__ = __DEFAULT_default_root_dir__
+
+
+def get_default_config_dir():
+    if __default_config_dir__ is None:
+        return __default_root_dir__ / __default_config_dir_suffix__
+    else:
+        return __default_config_dir__
+
+
+def set_default_config_dir(dir):
+    global __default_config_dir__
+    __default_config_dir__ = Path(dir).expanduser()
+
+
+def reset_default_config_dir():
+    global __default_config_dir__
+    __default_config_dir__ = __DEFAULT_default_config_dir__
 
 
 ##################
@@ -77,12 +126,15 @@ def init_config(*args, default=None, home=None, local=None):
     elif default is None:
         config.read(default_file)
 
-    # config file in user home/corpora directory
-    home_file = Path("~/corpora/corpora.ini").expanduser()
-    if home:
-        load_config(home_file)
-    elif home is None:
-        config.read(home_file)
+    # config files in default config directory
+    if home or home is None:
+        found_config = False
+        for path in get_default_config_dir().glob('*.ini'):
+            config.read(path)
+            found_config = True
+        if home and not found_config:
+            raise FileNotFoundError(f"Could not find any config files (*.ini) in directory "
+                                    f"'{get_default_config_dir()}'")
 
     # config file in current working directory
     local_file = 'corpora.ini'
@@ -124,6 +176,31 @@ def load_config(file, merge_duplicates=False, merge_defaults=False):
                                          f"defaults. Use merge_defaults=True to merge them.")
     with open(file) as f:
         config.read_file(f)
+
+
+def download_config(url, name, dir=None, load=False, **kwargs):
+    # download to tmp file
+    try:
+        tmp_file_name, _ = urlretrieve(url=url)
+    except (HTTPError, URLError) as e:
+        raise DownloadFailedError(f"Opening url '{url}' failed: {e}")
+    # get directory to save file
+    if dir is None:
+        dir = get_default_config_dir()
+    else:
+        dir = Path(dir)
+    # get full path to target file
+    file_path = dir / name
+    # check if file already exists
+    if file_path.exists():
+        raise FileExistsError(f"Cannot save config file to '{file_path}', file already exists.")
+    if not dir.exists():
+        dir.mkdir(parents=True)
+    # copy file
+    shutil.copyfile(tmp_file_name, file_path)
+    # load file
+    if load:
+        load_config(file_path, **kwargs)
 
 
 def set_key_value(corpus, key, value):
@@ -185,16 +262,33 @@ def clear_config(clear_default=False):
 ##################################################
 
 def get(corpus, key, raw=False):
+    return _get(corpus=corpus, key=key, raw=raw, _first_call=True)
+
+
+def _get(corpus, key, raw=False, _first_call=False):
+    """
+    The actual recursive getter called by get()
+    """
+    if _first_call:
+        get.visited_list = []
     if not raw:
         # unless raw values are requested, return processed versions of root and path
         if key == __ROOT__:
             # for sub-corpora the root is replaced by the parent's path
-            parent = get(corpus, __PARENT__)
+            parent = _get(corpus, __PARENT__)
+            if parent in get.visited_list:
+                raise ConfigCycleError(f"Cycle in parent-child relation when revisiting '{parent}' "
+                                       f"(visited before: {get.visited_list})")
+            else:
+                get.visited_list.append(parent)
             if parent is not None:
-                root = get(parent, __PATH__)
+                root = _get(parent, __PATH__)
             else:
                 root = config[_corpus_to_str(corpus)][__ROOT__]
-                root = Path(root).expanduser()
+                if root is None:
+                    root = get_default_root_dir()
+                else:
+                    root = Path(root).expanduser()
             if not root.is_absolute():
                 warn(f"Root for corpus '{corpus}' is a relative path ('{root}'), "
                      f"which is interpreted relative to the current "
@@ -212,9 +306,12 @@ def get(corpus, key, raw=False):
             if path.is_absolute():
                 return path
             else:
-                return get(corpus, __ROOT__) / path
+                return _get(corpus, __ROOT__) / path
     # default (and if raw is requested): return values directly from config
     return config[_corpus_to_str(corpus)][_key_to_str(key)]
+
+
+get.visited_list = []
 
 
 def corpora():

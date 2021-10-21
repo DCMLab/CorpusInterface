@@ -8,7 +8,7 @@ from corpusinterface.config import init_config, reset_config, load_config, clear
     set, set_key_value, set_default, \
     add_corpus, delete_corpus, corpus_params, getbool
 from corpusinterface.util import CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError, \
-    __DEFAULT__, __INFO__, __ROOT__, __PARENT__, __PATH__, __URL__, __ACCESS__, __LOADER__
+    ConfigCycleError, __DEFAULT__, __INFO__, __ROOT__, __PARENT__, __PATH__, __URL__, __ACCESS__, __LOADER__
 
 
 class Test(TestCase):
@@ -245,3 +245,7 @@ class Test(TestCase):
                          "    and: backref to test values\n"
                          "over multiple lines\n"
                          "    default_key: default_value", summary())
+
+    def test_cycles(self):
+        config.reset_config('tests/cycle_config.ini')
+        self.assertRaises(ConfigCycleError, lambda: config.summary())

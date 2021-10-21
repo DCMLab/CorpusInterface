@@ -4,7 +4,7 @@ from pathlib import Path
 from warnings import warn
 
 from .util import __DEFAULT__, __ROOT__, __PARENT__, __PATH__, \
-    CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError
+    CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError, ConfigCycleError
 
 # remember built-in set
 python_set = set
@@ -185,13 +185,27 @@ def clear_config(clear_default=False):
 ##################################################
 
 def get(corpus, key, raw=False):
+    return _get(corpus=corpus, key=key, raw=raw, _first_call=True)
+
+
+def _get(corpus, key, raw=False, _first_call=False):
+    """
+    The actual recursive getter called by get()
+    """
+    if _first_call:
+        get.visited_list = []
     if not raw:
         # unless raw values are requested, return processed versions of root and path
         if key == __ROOT__:
             # for sub-corpora the root is replaced by the parent's path
-            parent = get(corpus, __PARENT__)
+            parent = _get(corpus, __PARENT__)
+            if parent in get.visited_list:
+                raise ConfigCycleError(f"Cycle in parent-child relation when revisiting '{parent}' "
+                                       f"(visited before: {get.visited_list})")
+            else:
+                get.visited_list.append(parent)
             if parent is not None:
-                root = get(parent, __PATH__)
+                root = _get(parent, __PATH__)
             else:
                 root = config[_corpus_to_str(corpus)][__ROOT__]
                 root = Path(root).expanduser()
@@ -212,9 +226,12 @@ def get(corpus, key, raw=False):
             if path.is_absolute():
                 return path
             else:
-                return get(corpus, __ROOT__) / path
+                return _get(corpus, __ROOT__) / path
     # default (and if raw is requested): return values directly from config
     return config[_corpus_to_str(corpus)][_key_to_str(key)]
+
+
+get.visited_list = []
 
 
 def corpora():

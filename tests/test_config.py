@@ -1,6 +1,7 @@
 #  Copyright (c) 2020 Robert Lieck
 from unittest import TestCase
 from pathlib import Path
+import shutil
 
 from corpusinterface import config
 from corpusinterface.config import init_config, reset_config, load_config, clear_config, summary, \
@@ -8,7 +9,8 @@ from corpusinterface.config import init_config, reset_config, load_config, clear
     set, set_key_value, set_default, \
     add_corpus, delete_corpus, corpus_params, getbool
 from corpusinterface.util import CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError, \
-    ConfigCycleError, __DEFAULT__, __INFO__, __ROOT__, __PARENT__, __PATH__, __URL__, __ACCESS__, __LOADER__
+    ConfigCycleError, DownloadFailedError, \
+    __DEFAULT__, __INFO__, __ROOT__, __PARENT__, __PATH__, __URL__, __ACCESS__, __LOADER__
 
 
 class Test(TestCase):
@@ -64,6 +66,43 @@ class Test(TestCase):
 
         # assert both works if there are no duplicates
         load_config('tests/test_corpora.ini')
+
+    def test_download_config(self):
+        # get summary of default config for later checking, then clear
+        summary = config.summary()
+        config.clear_config(clear_default=True)
+        empty_summary = config.summary()
+        self.assertNotEqual(summary, empty_summary)
+        # new config dir
+        config_dir = Path(__file__).parents[0] / "config"
+        # make sure it does not already exists and use
+        self.assertFalse(config_dir.exists())
+        config.set_default_config_dir(config_dir)
+        # bad URL should raise error
+        self.assertRaises(DownloadFailedError,
+                          lambda: config.download_config(url="https://bad/url/", name="default_config.ini"))
+        # download default config
+        url = "https://raw.githubusercontent.com/DCMLab/corpusinterface/master/corpusinterface/default_config.ini"
+        config.download_config(url=url, name="default_config.ini")
+        # check it is there
+        self.assertTrue((config.get_default_config_dir() / "default_config.ini").exists())
+        # check is was not loaded
+        self.assertEqual(config.summary(), empty_summary)
+        # try to download again to same path (should fail)
+        self.assertRaises(FileExistsError, lambda: config.download_config(url=url,
+                                                                          name="default_config.ini",
+                                                                          dir=config_dir))
+        # try to download again to different path and also load
+        config.download_config(url=url, name="default_config.ini", dir=config_dir / "subdir", load=True)
+        self.assertEqual(config.summary(), summary)
+        # clear config and only load from home/default to make sure the file is now loaded automatically
+        clear_config(clear_default=True)
+        self.assertEqual(config.summary(), empty_summary)
+        init_config(default=False, local=False, home=True)
+        self.assertEqual(config.summary(), summary)
+        # remove new config dir again
+        shutil.rmtree(config_dir)
+
 
     def test_get_methods(self):
         # init and load test corpora

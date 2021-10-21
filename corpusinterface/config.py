@@ -2,8 +2,11 @@
 import configparser
 from pathlib import Path
 from warnings import warn
+from urllib.request import urlretrieve
+from urllib.error import URLError, HTTPError
+import shutil
 
-from .util import __DEFAULT__, __ROOT__, __PARENT__, __PATH__, \
+from .util import __DEFAULT__, __ROOT__, __PARENT__, __PATH__, DownloadFailedError, \
     CorpusExistsError, CorpusNotFoundError, DuplicateCorpusError, DuplicateDefaultsError, ConfigCycleError
 
 # remember built-in set
@@ -173,6 +176,31 @@ def load_config(file, merge_duplicates=False, merge_defaults=False):
                                          f"defaults. Use merge_defaults=True to merge them.")
     with open(file) as f:
         config.read_file(f)
+
+
+def download_config(url, name, dir=None, load=False, **kwargs):
+    # download to tmp file
+    try:
+        tmp_file_name, _ = urlretrieve(url=url)
+    except (HTTPError, URLError) as e:
+        raise DownloadFailedError(f"Opening url '{url}' failed: {e}")
+    # get directory to save file
+    if dir is None:
+        dir = get_default_config_dir()
+    else:
+        dir = Path(dir)
+    # get full path to target file
+    file_path = dir / name
+    # check if file already exists
+    if file_path.exists():
+        raise FileExistsError(f"Cannot save config file to '{file_path}', file already exists.")
+    if not dir.exists():
+        dir.mkdir(parents=True)
+    # copy file
+    shutil.copyfile(tmp_file_name, file_path)
+    # load file
+    if load:
+        load_config(file_path, **kwargs)
 
 
 def set_key_value(corpus, key, value):

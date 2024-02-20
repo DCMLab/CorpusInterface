@@ -3,8 +3,10 @@ from pathlib import Path
 import os
 import re
 import json
-import pandas
 import ast
+
+import pandas
+
 
 class Data:
     """An abstract base class for data items, such as corpora or documents."""

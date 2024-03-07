@@ -26,10 +26,9 @@ loaders = {
 
 def populate_kwargs(corpus, kwargs_dict):
     if corpus is not None:
-        for key, val in config.corpus_params(corpus):
-            if key not in kwargs_dict:
-                kwargs_dict[key] = val
-    return kwargs_dict
+        return {**dict(config.corpus_params(corpus)), **kwargs_dict}
+    else:
+        return kwargs_dict.copy()
 
 
 def remove(corpus, silent=False, not_exists_ok=False, not_dir_ok=False, **kwargs):
@@ -74,13 +73,13 @@ def load(corpus=None, **kwargs):
     :return: output of loader
     """
     # populate keyword arguments from config
-    kwargs = populate_kwargs(corpus, kwargs)
+    populated_kwargs = populate_kwargs(corpus, kwargs)
     # check if corpus exists
-    path = Path(kwargs[config.__PATH__])
+    path = Path(populated_kwargs[config.__PATH__])
     if path.exists():
-        if __LOADER__ in kwargs:
+        if __LOADER__ in populated_kwargs:
             # extract loader from kwargs
-            loader = kwargs[__LOADER__]
+            loader = populated_kwargs[__LOADER__]
             # if string was provided, lookup loader function
             if isinstance(loader, str):
                 try:
@@ -90,18 +89,18 @@ def load(corpus=None, **kwargs):
             # make sure loader is callable
             if not callable(loader):
                 raise LoadingFailedError(f"{__LOADER__} '{loader}' is not callable.")
-            # call loader with remaining kwargs
-            return loader(**kwargs)
+            # call loader
+            return loader(**populated_kwargs)
         else:
             raise LoadingFailedError("No loader specified.")
     else:
         # if it does not exist, try downloading (if requested) and then retry
-        if config.getbool(kwargs.get(__DOWNLOAD__, False)):
-            # prevent second attempt in reload
-            kwargs[__DOWNLOAD__] = False
-            # download
+        if config.getbool(populated_kwargs.get(__DOWNLOAD__, False)):
+            # download using original (unpopulated) kwargs
             download(corpus, **kwargs)
-            # reload
+            # prevent second download attempt in reload
+            kwargs[__DOWNLOAD__] = False
+                        # reload
             return load(corpus, **kwargs)
         else:
             raise CorpusNotFoundError(f"Corpus '{corpus}' at path '{path}' does not exist "

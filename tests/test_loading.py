@@ -61,11 +61,11 @@ class Test(TestCase):
                                            path="/tmp/corpus-interface-test-dir-nonsense/",
                                            url="http://some-bad-url-that-skrews-up-the-tests.com/corpus.zip"))
 
-    def test_download_from_child(self):
-        # child corpus
+    def test_load_from_child(self):
+                # child corpus
         corpus = "testcorpus-zip-child"
         # download
-        download(corpus)
+        load(corpus, download=True)
         # assert the directory is there and non-empty
         path = config.get(corpus, util.__PATH__)
         self.assertTrue(list(path.iterdir()))
